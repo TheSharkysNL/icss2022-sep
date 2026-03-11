@@ -1,9 +1,16 @@
 package nl.han.ica.icss.ast.literals;
 
+import nl.han.ica.datastructures.IHANLinkedList;
+import nl.han.ica.icss.Result;
 import nl.han.ica.icss.ast.Literal;
-import java.util.Objects;
+import nl.han.ica.icss.ast.NumericLiteral;
+import nl.han.ica.icss.transforms.EvaluationError;
 
-public class BoolLiteral extends Literal {
+import java.util.HashMap;
+import java.util.Objects;
+import java.util.Optional;
+
+public class BoolLiteral extends NumericLiteral {
     public boolean value;
 
     public BoolLiteral(boolean value) {
@@ -12,6 +19,7 @@ public class BoolLiteral extends Literal {
     public BoolLiteral(String text) {
         this.value = text.equals("TRUE");
     }
+
     @Override
     public String getNodeLabel() {
         String textValue = value ? "TRUE" : "FALSE";
@@ -30,5 +38,20 @@ public class BoolLiteral extends Literal {
     @Override
     public int hashCode() {
         return Objects.hash(value);
+    }
+
+    @Override
+    public Result<Literal, EvaluationError> tryEvaluate(IHANLinkedList<HashMap<String, Literal>> variables) {
+        return new Result.Success<>(this);
+    }
+
+    @Override
+    public int getNumericValue() {
+        return value ? 1 : 0;
+    }
+
+    @Override
+    public NumericLiteral fromNumericValue(int number) {
+        return new BoolLiteral(number >= 1);
     }
 }

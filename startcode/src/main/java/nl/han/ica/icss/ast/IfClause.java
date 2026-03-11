@@ -4,11 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class IfClause extends ASTNode {
+public class IfClause extends BodyStatement {
 
 
     public Expression conditionalExpression;
-    public List<ASTNode> body = new ArrayList<>();
     public ElseClause elseClause;
 
     public IfClause() { }

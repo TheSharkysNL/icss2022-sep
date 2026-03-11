@@ -4,10 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class Stylerule extends ASTNode {
+public class Stylerule extends BodyStatement {
 	
 	public List<Selector> selectors = new ArrayList<>();
-	public List<ASTNode> body = new ArrayList<>();
 
     public Stylerule() { }
 

@@ -3,6 +3,7 @@ package nl.han.ica.icss.ast;
 import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.icss.Result;
 import nl.han.ica.icss.transforms.EvaluationError;
+import nl.han.ica.icss.transforms.VariableNotFound;
 
 import java.util.HashMap;
 import java.util.Objects;
@@ -33,7 +34,16 @@ public class VariableReference extends Expression {
 
 	@Override
 	public Result<Literal, EvaluationError> tryEvaluate(IHANLinkedList<HashMap<String, Literal>> variables) {
-		throw new RuntimeException("Not implemented");
+		for (int i = 0; i < variables.getSize(); i++) {
+			HashMap<String, Literal> map = variables.get(i);
+
+			Literal variableLit = map.get(name);
+			if (variableLit != null) {
+				return new Result.Success<>(variableLit);
+			}
+		}
+
+		return new Result.Error<>(new VariableNotFound(name));
 	}
 
 	@Override

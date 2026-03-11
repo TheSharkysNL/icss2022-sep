@@ -4,9 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class ElseClause extends ASTNode{
-
-    public List<ASTNode> body = new ArrayList<>();
+public class ElseClause extends BodyStatement {
 
     public ElseClause() { }
 

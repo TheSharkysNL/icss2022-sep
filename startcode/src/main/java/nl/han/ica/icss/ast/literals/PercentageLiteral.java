@@ -1,10 +1,16 @@
 package nl.han.ica.icss.ast.literals;
 
+import nl.han.ica.datastructures.IHANLinkedList;
+import nl.han.ica.icss.Result;
 import nl.han.ica.icss.ast.Literal;
+import nl.han.ica.icss.ast.NumericLiteral;
+import nl.han.ica.icss.transforms.EvaluationError;
 
+import java.util.HashMap;
 import java.util.Objects;
+import java.util.Optional;
 
-public class PercentageLiteral extends Literal {
+public class PercentageLiteral extends NumericLiteral {
     public int value;
 
     public PercentageLiteral(int value) {
@@ -30,5 +36,20 @@ public class PercentageLiteral extends Literal {
     @Override
     public int hashCode() {
         return Objects.hash(value);
+    }
+
+    @Override
+    public int getNumericValue() {
+        return value;
+    }
+
+    @Override
+    public Result<Literal, EvaluationError> tryEvaluate(IHANLinkedList<HashMap<String, Literal>> variables) {
+        return new Result.Success<>(this);
+    }
+
+    @Override
+    public NumericLiteral fromNumericValue(int number) {
+        return new PercentageLiteral(number);
     }
 }

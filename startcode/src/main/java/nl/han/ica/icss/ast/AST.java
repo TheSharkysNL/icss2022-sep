@@ -3,7 +3,6 @@ package nl.han.ica.icss.ast;
 import nl.han.ica.icss.checker.SemanticError;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Objects;
 
 public class AST {
@@ -48,5 +47,15 @@ public class AST {
 	@Override
 	public int hashCode() {
 		return Objects.hash(root);
+	}
+
+	public String generateCss() {
+		StringBuilder builder = new StringBuilder(256);
+
+		for (ASTNode node : root.getChildren()) {
+			node.addGeneratedCss(builder);
+		}
+
+		return builder.toString();
 	}
 }

@@ -21,7 +21,7 @@ public class ASTNode {
      Different AST nodes use different attributes to store their children.
      This method provides a unified interface.
      */
-    public ArrayList<ASTNode> getChildren() {
+    public List<ASTNode> getChildren() {
         return new ArrayList<>();
     }
     /*
@@ -81,5 +81,11 @@ public class ASTNode {
             }
         }
         return true;
+    }
+
+    public void addGeneratedCss(StringBuilder builder) {
+        for (ASTNode child : getChildren()) {
+            child.addGeneratedCss(builder);
+        }
     }
 }
