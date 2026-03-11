@@ -1,17 +1,18 @@
 package nl.han.ica.icss.parser;
 
-import java.util.Stack;
-
 
 import nl.han.ica.datastructures.IHANStack;
 import nl.han.ica.icss.ast.*;
-import nl.han.ica.icss.ast.literals.*;
-import nl.han.ica.icss.ast.operations.AddOperation;
-import nl.han.ica.icss.ast.operations.MultiplyOperation;
-import nl.han.ica.icss.ast.operations.SubtractOperation;
-import nl.han.ica.icss.ast.selectors.ClassSelector;
-import nl.han.ica.icss.ast.selectors.IdSelector;
-import nl.han.ica.icss.ast.selectors.TagSelector;
+import nl.han.ica.icss.ast.literals.BoolLiteral;
+import nl.han.ica.icss.ast.literals.ColorLiteral;
+import nl.han.ica.icss.ast.literals.PercentageLiteral;
+import nl.han.ica.icss.ast.literals.PixelLiteral;
+import nl.han.ica.icss.parser.visitors.ExpressionVisitor;
+import nl.han.ica.icss.parser.visitors.StatementVisitor;
+import org.antlr.v4.runtime.tree.ErrorNode;
+import org.antlr.v4.runtime.tree.ErrorNodeImpl;
+
+import java.util.List;
 
 /**
  * This class extracts the ICSS Abstract Syntax Tree from the Antlr Parse tree.
@@ -19,17 +20,27 @@ import nl.han.ica.icss.ast.selectors.TagSelector;
 public class ASTListener extends ICSSBaseListener {
 	
 	//Accumulator attributes:
-	private AST ast;
+	private final AST ast;
+
+	private final Stylesheet styleSheet;
 
 	//Use this to keep track of the parent nodes when recursively traversing the ast
 	private IHANStack<ASTNode> currentContainer;
 
 	public ASTListener() {
-		ast = new AST();
+		styleSheet = new Stylesheet();
+		ast = new AST(styleSheet);
 		//currentContainer = new HANStack<>();
 	}
     public AST getAST() {
         return ast;
     }
-    
+
+	@Override
+	public void enterStatement(ICSSParser.StatementContext statement) {
+		ASTNode node = statement
+				.accept(new StatementVisitor());
+
+		styleSheet.addChild(node);
+	}
 }
