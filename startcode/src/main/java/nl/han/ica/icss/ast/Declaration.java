@@ -17,6 +17,13 @@ public class Declaration extends ASTNode {
 		super();
 		this.property = new PropertyName(property);
 	}
+
+	public Declaration(String property, Expression expression) {
+		super();
+		this.property = new PropertyName(property);
+		this.expression = expression;
+	}
+
 	@Override
 	public String getNodeLabel() {
 	    return "Declaration";

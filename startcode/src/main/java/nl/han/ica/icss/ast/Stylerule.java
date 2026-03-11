@@ -1,19 +1,19 @@
 package nl.han.ica.icss.ast;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class Stylerule extends ASTNode {
 	
-	public ArrayList<Selector> selectors = new ArrayList<>();
-	public ArrayList<ASTNode> body = new ArrayList<>();
+	public List<Selector> selectors = new ArrayList<>();
+	public List<ASTNode> body = new ArrayList<>();
 
     public Stylerule() { }
 
-    public Stylerule(Selector selector, ArrayList<ASTNode> body) {
+    public Stylerule(List<Selector> selectors, List<ASTNode> body) {
 
-    	this.selectors = new ArrayList<>();
-    	this.selectors.add(selector);
+    	this.selectors = selectors;
     	this.body = body;
     }
 

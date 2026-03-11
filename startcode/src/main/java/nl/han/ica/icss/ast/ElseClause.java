@@ -1,15 +1,16 @@
 package nl.han.ica.icss.ast;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class ElseClause extends ASTNode{
 
-    public ArrayList<ASTNode> body = new ArrayList<>();
+    public List<ASTNode> body = new ArrayList<>();
 
     public ElseClause() { }
 
-    public ElseClause(ArrayList<ASTNode> body) {
+    public ElseClause(List<ASTNode> body) {
 
         this.body = body;
     }

@@ -1,23 +1,24 @@
 package nl.han.ica.icss.ast;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class IfClause extends ASTNode {
 
 
     public Expression conditionalExpression;
-    public ArrayList<ASTNode> body = new ArrayList<>();
+    public List<ASTNode> body = new ArrayList<>();
     public ElseClause elseClause;
 
     public IfClause() { }
 
-    public IfClause(Expression conditionalExpression, ArrayList<ASTNode> body) {
+    public IfClause(Expression conditionalExpression, List<ASTNode> body) {
 
         this.conditionalExpression = conditionalExpression;
         this.body = body;
     }
-    public IfClause(Expression conditionalExpression, ArrayList<ASTNode> body, ElseClause elseClause) {
+    public IfClause(Expression conditionalExpression, List<ASTNode> body, ElseClause elseClause) {
 
         this.conditionalExpression = conditionalExpression;
         this.body = body;

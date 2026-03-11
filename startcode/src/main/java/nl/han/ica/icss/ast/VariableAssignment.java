@@ -12,6 +12,16 @@ public class VariableAssignment extends ASTNode {
 	public VariableReference name;
 	public Expression expression;
 
+	public VariableAssignment() {
+		name = null;
+		expression = null;
+	}
+
+	public VariableAssignment(VariableReference name, Expression value) {
+		this.name = name;
+		this.expression = value;
+	}
+
 	@Override
 	public String getNodeLabel() {
 		return "VariableAssignment (" + name.name + ")";
