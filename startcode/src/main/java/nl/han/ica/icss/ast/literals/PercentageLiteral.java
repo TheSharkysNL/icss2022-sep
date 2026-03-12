@@ -52,4 +52,10 @@ public class PercentageLiteral extends NumericLiteral {
     public NumericLiteral fromNumericValue(int number) {
         return new PercentageLiteral(number);
     }
+
+    @Override
+    public void addGeneratedCss(StringBuilder builder) {
+        builder.append(value);
+        builder.append('%');
+    }
 }

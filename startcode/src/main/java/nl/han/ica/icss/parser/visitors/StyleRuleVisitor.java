@@ -30,7 +30,7 @@ public class StyleRuleVisitor extends ICSSBaseVisitor<ASTNode> {
 
         ElseClause elseClause;
         if (ifStmt.elseStatement() != null) {
-            List<ASTNode> elseBody = ifStmt.ruleStatement()
+            List<ASTNode> elseBody = ifStmt.elseStatement().ruleStatement()
                     .stream()
                     .map(ruleStmt -> ruleStmt.accept(this))
                     .toList();

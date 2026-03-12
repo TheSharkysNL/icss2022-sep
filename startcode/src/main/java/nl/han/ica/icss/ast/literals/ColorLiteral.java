@@ -53,6 +53,11 @@ public class ColorLiteral extends NumericLiteral {
         String paddedHexNumber = String.format("%1$" + 6 + "s",  Integer.toString(number, 16))
                 .replace(' ', '0');
 
-        return new ColorLiteral(paddedHexNumber);
+        return new ColorLiteral("#" + paddedHexNumber);
+    }
+
+    @Override
+    public void addGeneratedCss(StringBuilder builder) {
+        builder.append(value);
     }
 }

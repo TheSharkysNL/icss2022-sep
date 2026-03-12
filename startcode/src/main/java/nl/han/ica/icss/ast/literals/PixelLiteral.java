@@ -52,4 +52,10 @@ public class PixelLiteral extends NumericLiteral {
     public NumericLiteral fromNumericValue(int number) {
         return new PixelLiteral(number);
     }
+
+    @Override
+    public void addGeneratedCss(StringBuilder builder) {
+        builder.append(value);
+        builder.append("px");
+    }
 }

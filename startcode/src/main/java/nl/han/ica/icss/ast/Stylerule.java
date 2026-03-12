@@ -52,4 +52,27 @@ public class Stylerule extends BodyStatement {
 	public int hashCode() {
 		return Objects.hash(selectors, body);
 	}
+
+	@Override
+	public void addGeneratedCss(StringBuilder builder) {
+		for (Selector selector : selectors) {
+			selector.addGeneratedCss(builder);
+			builder.append(' ');
+		}
+
+		builder.append("{\n    ");
+
+		if (!body.isEmpty()) {
+			ASTNode first = body.getFirst();
+
+			first.addGeneratedCss(builder);
+
+			for (int i = 1; i < body.size(); i++) {
+				builder.append("\n    ");
+				body.get(i).addGeneratedCss(builder);
+			}
+		}
+
+		builder.append("\n}\n\n");
+	}
 }

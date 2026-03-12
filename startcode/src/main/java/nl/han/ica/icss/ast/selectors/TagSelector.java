@@ -32,4 +32,9 @@ public class TagSelector extends Selector {
 
         return Objects.hash(tag);
     }
+
+    @Override
+    public void addGeneratedCss(StringBuilder builder) {
+        builder.append(tag);
+    }
 }

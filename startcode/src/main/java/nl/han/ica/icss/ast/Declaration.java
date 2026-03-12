@@ -62,4 +62,15 @@ public class Declaration extends ASTNode {
 	public int hashCode() {
 		return Objects.hash(property, expression);
 	}
+
+	@Override
+	public void addGeneratedCss(StringBuilder builder) {
+		builder.append(property.name);
+
+		builder.append(": ");
+
+		expression.addGeneratedCss(builder);
+
+		builder.append(';');
+	}
 }

@@ -5,6 +5,7 @@ import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.icss.Result;
 import nl.han.ica.icss.ast.*;
 import nl.han.ica.icss.ast.literals.BoolLiteral;
+import org.checkerframework.checker.nullness.Opt;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -75,17 +76,19 @@ public class Evaluator implements Transform {
                 innerBody.body = newInnerBody.value();
             }
 
-            Result<ASTNode, EvaluationError> evaluation = evaluate(child);
+            Result<Optional<ASTNode>, EvaluationError> evaluation = evaluate(child);
             if (evaluation.isError()) {
                 return new Result.Error<>(evaluation.error());
             }
-            newBody.add(evaluation.value());
+            if (evaluation.value().isPresent()) {
+                newBody.add(evaluation.value().get());
+            }
         }
 
         return new Result.Success<>(newBody);
     }
 
-    private Result<ASTNode, EvaluationError> evaluate(ASTNode node) {
+    private Result<Optional<ASTNode>, EvaluationError> evaluate(ASTNode node) {
         if (node instanceof VariableAssignment variableAssignment) {
             Expression expression = variableAssignment.expression;
 
@@ -102,6 +105,7 @@ public class Evaluator implements Transform {
             }
 
             map.put(variableAssignment.name.name, literal.value());
+            return new Result.Success<>(Optional.empty());
         } else if (node instanceof Declaration declaration) {
             Expression expression = declaration.expression;
 
@@ -113,7 +117,7 @@ public class Evaluator implements Transform {
             declaration.expression = literal.value();
         }
 
-        return new Result.Success<>(node);
+        return new Result.Success<>(Optional.of(node));
     }
 
     
