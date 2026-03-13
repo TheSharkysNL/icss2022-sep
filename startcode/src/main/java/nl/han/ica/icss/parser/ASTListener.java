@@ -37,10 +37,13 @@ public class ASTListener extends ICSSBaseListener {
     }
 
 	@Override
-	public void enterStatement(ICSSParser.StatementContext statement) {
-		ASTNode node = statement
-				.accept(new StatementVisitor());
+	public void enterStylesheet(ICSSParser.StylesheetContext stylesheet) {
+		StatementVisitor visitor = new StatementVisitor();
 
-		styleSheet.addChild(node);
+        styleSheet.body = stylesheet.statement()
+                .stream()
+                .map(statement -> statement
+                        .accept(visitor))
+                .toList();
 	}
 }

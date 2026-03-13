@@ -74,16 +74,6 @@ public interface ICSSListener extends ParseTreeListener {
 	 */
 	void exitElseStatement(ICSSParser.ElseStatementContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link ICSSParser#ruleStatement}.
-	 * @param ctx the parse tree
-	 */
-	void enterRuleStatement(ICSSParser.RuleStatementContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link ICSSParser#ruleStatement}.
-	 * @param ctx the parse tree
-	 */
-	void exitRuleStatement(ICSSParser.RuleStatementContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link ICSSParser#style}.
 	 * @param ctx the parse tree
 	 */
@@ -189,6 +179,18 @@ public interface ICSSListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitExpressionLiteral(ICSSParser.ExpressionLiteralContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code braceExpression}
+	 * labeled alternative in {@link ICSSParser#primaryExpression}.
+	 * @param ctx the parse tree
+	 */
+	void enterBraceExpression(ICSSParser.BraceExpressionContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code braceExpression}
+	 * labeled alternative in {@link ICSSParser#primaryExpression}.
+	 * @param ctx the parse tree
+	 */
+	void exitBraceExpression(ICSSParser.BraceExpressionContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ICSSParser#multiplicativeExpression}.
 	 * @param ctx the parse tree

@@ -9,4 +9,10 @@ public class PrimaryExpressionVisitor extends ExpressionLiteralVisitor {
     public final Expression visitVariableIdent(ICSSParser.VariableIdentContext ctx) {
         return new VariableReference(ctx.CAPITAL_IDENT().getText());
     }
+
+    @Override
+    public Expression visitBraceExpression(ICSSParser.BraceExpressionContext ctx) {
+        return ctx.expression()
+                .accept(new ExpressionVisitor());
+    }
 }

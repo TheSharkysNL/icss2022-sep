@@ -50,12 +50,6 @@ public interface ICSSVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitElseStatement(ICSSParser.ElseStatementContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link ICSSParser#ruleStatement}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitRuleStatement(ICSSParser.RuleStatementContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link ICSSParser#style}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -117,6 +111,13 @@ public interface ICSSVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitExpressionLiteral(ICSSParser.ExpressionLiteralContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code braceExpression}
+	 * labeled alternative in {@link ICSSParser#primaryExpression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitBraceExpression(ICSSParser.BraceExpressionContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link ICSSParser#multiplicativeExpression}.
 	 * @param ctx the parse tree

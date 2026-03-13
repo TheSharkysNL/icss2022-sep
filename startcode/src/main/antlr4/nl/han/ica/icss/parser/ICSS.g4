@@ -8,6 +8,10 @@ ELSE: 'else';
 BOX_BRACKET_OPEN: '[';
 BOX_BRACKET_CLOSE: ']';
 
+// Function support:
+FN: 'fn';
+RETURN: 'return';
+COMMA: ',';
 
 //Literals
 TRUE: 'TRUE';
@@ -46,12 +50,16 @@ selector: LOWER_IDENT #tagSelector | ID_IDENT #idSelector | CLASS_IDENT #classSe
 
 rule: LOWER_IDENT COLON expression SEMICOLON;
 
-ifStatement: IF BOX_BRACKET_OPEN expression BOX_BRACKET_CLOSE OPEN_BRACE ruleStatement* CLOSE_BRACE elseStatement?;
-elseStatement: ELSE OPEN_BRACE ruleStatement* CLOSE_BRACE;
+ifStatement: IF BOX_BRACKET_OPEN expression BOX_BRACKET_CLOSE OPEN_BRACE statement* CLOSE_BRACE elseStatement?;
+elseStatement: ELSE OPEN_BRACE statement* CLOSE_BRACE;
 
-ruleStatement: rule | ifStatement;
+style: selector+ OPEN_BRACE statement* CLOSE_BRACE;
 
-style: selector+ OPEN_BRACE ruleStatement* CLOSE_BRACE;
+// function declaration
+//return: RETURN expression SEMICOLON;
+//paramater: CAPITAL_IDENT;
+//parameter_list: paramater | parameter_list COMMA paramater;
+//functionDeclaration: FN CAPITAL_IDENT BOX_BRACKET_OPEN parameter_list BOX_BRACKET_CLOSE OPEN_BRACE statement* CLOSE_BRACE;
 
 expressionLit
     : COLOR           #colorLiteral
@@ -61,7 +69,13 @@ expressionLit
     | TRUE            #trueLiteral
     | FALSE           #falseLiteral
     ;
-primaryExpression: CAPITAL_IDENT #variableIdent | expressionLit #expressionLiteral;
+primaryExpression: CAPITAL_IDENT #variableIdent | expressionLit #expressionLiteral | (OPEN_BRACE expression CLOSE_BRACE) #braceExpression;
+
+// function call
+//postfixExpression
+//    : primaryExpression
+//    | postfixExpression BOX_BRACKET_OPEN expression_list BOX_BRACKET_CLOSE;
+
 multiplicativeExpression
     : primaryExpression
     | multiplicativeExpression MUL primaryExpression;
@@ -71,9 +85,9 @@ additiveExpression
     | additiveExpression MIN multiplicativeExpression;
 
 expression: additiveExpression;
+//expression_list: expression | expression_list COMMA expression;
 variableAssignment: CAPITAL_IDENT ASSIGNMENT_OPERATOR expression SEMICOLON;
 
-statement: style | variableAssignment;
+statement: style | variableAssignment | ifStatement | rule;
 
 stylesheet: statement+|EOF;
-
