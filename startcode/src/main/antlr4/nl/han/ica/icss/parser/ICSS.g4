@@ -48,7 +48,7 @@ ASSIGNMENT_OPERATOR: ':=';
 //--- PARSER: ---
 selector: LOWER_IDENT #tagSelector | ID_IDENT #idSelector | CLASS_IDENT #classSelector;
 
-rule: LOWER_IDENT COLON expression SEMICOLON;
+declaration: LOWER_IDENT COLON expression SEMICOLON;
 
 ifStatement: IF BOX_BRACKET_OPEN expression BOX_BRACKET_CLOSE OPEN_BRACE statement* CLOSE_BRACE elseStatement?;
 elseStatement: ELSE OPEN_BRACE statement* CLOSE_BRACE;
@@ -88,6 +88,6 @@ expression: additiveExpression;
 //expression_list: expression | expression_list COMMA expression;
 variableAssignment: CAPITAL_IDENT ASSIGNMENT_OPERATOR expression SEMICOLON;
 
-statement: style | variableAssignment | ifStatement | rule;
+statement: style | variableAssignment | ifStatement | declaration;
 
 stylesheet: statement+|EOF;
