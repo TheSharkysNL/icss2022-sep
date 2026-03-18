@@ -4,6 +4,7 @@ import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.icss.Result;
 import nl.han.ica.icss.ast.Literal;
 import nl.han.ica.icss.ast.NumericLiteral;
+import nl.han.ica.icss.ast.types.ExpressionType;
 import nl.han.ica.icss.transforms.EvaluationError;
 
 import java.util.HashMap;
@@ -53,5 +54,10 @@ public class BoolLiteral extends NumericLiteral {
     @Override
     public NumericLiteral fromNumericValue(int number) {
         return new BoolLiteral(number >= 1);
+    }
+
+    @Override
+    protected ExpressionType getExpressionType() {
+        return ExpressionType.BOOL;
     }
 }

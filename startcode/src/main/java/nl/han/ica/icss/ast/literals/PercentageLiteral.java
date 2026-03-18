@@ -4,6 +4,7 @@ import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.icss.Result;
 import nl.han.ica.icss.ast.Literal;
 import nl.han.ica.icss.ast.NumericLiteral;
+import nl.han.ica.icss.ast.types.ExpressionType;
 import nl.han.ica.icss.transforms.EvaluationError;
 
 import java.util.HashMap;
@@ -57,5 +58,10 @@ public class PercentageLiteral extends NumericLiteral {
     public void addGeneratedCss(StringBuilder builder) {
         builder.append(value);
         builder.append('%');
+    }
+
+    @Override
+    public ExpressionType getExpressionType() {
+        return ExpressionType.PERCENTAGE;
     }
 }

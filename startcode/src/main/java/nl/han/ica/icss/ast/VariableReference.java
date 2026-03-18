@@ -2,6 +2,8 @@ package nl.han.ica.icss.ast;
 
 import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.icss.Result;
+import nl.han.ica.icss.ast.types.ExpressionType;
+import nl.han.ica.icss.checker.SemanticError;
 import nl.han.ica.icss.transforms.EvaluationError;
 import nl.han.ica.icss.transforms.VariableNotFound;
 
@@ -47,8 +49,27 @@ public class VariableReference extends Expression {
 	}
 
 	@Override
-	public int hashCode() {
+	public Optional<SemanticError> validateExpression(IHANLinkedList<HashMap<String, ExpressionType>> variables) {
+		return getExpressionType(variables)
+				.ok();
+	}
 
+	@Override
+	public int hashCode() {
 		return Objects.hash(name);
+	}
+
+	@Override
+	public Result<ExpressionType, SemanticError> getExpressionType(IHANLinkedList<HashMap<String, ExpressionType>> variables) {
+		for (int i = 0; i < variables.getSize(); i++) {
+			HashMap<String, ExpressionType> map = variables.get(i);
+			ExpressionType type = map.get(name);
+
+			if (type != null) {
+				return new Result.Success<>(type);
+			}
+		}
+
+		return new Result.Error<>(new SemanticError("Variable not found: \"" + name + "\""));
 	}
 }

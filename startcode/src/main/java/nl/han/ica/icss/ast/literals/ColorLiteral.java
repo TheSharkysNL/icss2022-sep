@@ -4,6 +4,7 @@ import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.icss.Result;
 import nl.han.ica.icss.ast.Literal;
 import nl.han.ica.icss.ast.NumericLiteral;
+import nl.han.ica.icss.ast.types.ExpressionType;
 import nl.han.ica.icss.transforms.EvaluationError;
 import nl.han.ica.icss.transforms.InvalidOperation;
 
@@ -59,5 +60,10 @@ public class ColorLiteral extends NumericLiteral {
     @Override
     public void addGeneratedCss(StringBuilder builder) {
         builder.append(value);
+    }
+
+    @Override
+    public ExpressionType getExpressionType() {
+        return ExpressionType.COLOR;
     }
 }
