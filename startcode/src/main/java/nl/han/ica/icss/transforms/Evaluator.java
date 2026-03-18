@@ -5,12 +5,10 @@ import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.icss.Result;
 import nl.han.ica.icss.ast.*;
 import nl.han.ica.icss.ast.literals.BoolLiteral;
+import nl.han.ica.icss.checker.Checker;
 import org.checkerframework.checker.nullness.Opt;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class Evaluator implements Transform {
 
@@ -23,8 +21,8 @@ public class Evaluator implements Transform {
     @Override
     public void apply(AST ast) {
         Result<List<ASTNode>, EvaluationError> styleSheetBody = evaluateBody(ast.root);
-        if (styleSheetBody.isError()) {
-            throw new RuntimeException(styleSheetBody.error().toString()); // TODO: update this to not throw a exception
+        if (styleSheetBody.isError()) { // evalution errors should never happen as the checker should have caught them
+            throw new RuntimeException(styleSheetBody.error().toString());
         }
 
         ast.root.body = styleSheetBody.value();
@@ -33,6 +31,7 @@ public class Evaluator implements Transform {
 
     private Result<List<ASTNode>, EvaluationError> evaluateBody(BodyStatement body) {
         ArrayList<ASTNode> newBody = new ArrayList<>();
+        variableValues.addFirst(new HashMap<>());
 
         for (int i = 0; i < body.body.size(); i++) {
             ASTNode child = body.body.get(i);
@@ -85,6 +84,8 @@ public class Evaluator implements Transform {
             }
         }
 
+        Checker.popVariablesOffStack(variableValues, body);
+
         return new Result.Success<>(newBody);
     }
 
@@ -98,13 +99,10 @@ public class Evaluator implements Transform {
             }
 
             variableAssignment.expression = literal.value();
-            HashMap<String, Literal> map =  variableValues.getFirst();
-            if (map == null) {
-                map = new HashMap<>();
-                variableValues.addFirst(map);
-            }
 
+            HashMap<String, Literal> map =  variableValues.getFirst();
             map.put(variableAssignment.name.name, literal.value());
+
             return new Result.Success<>(Optional.empty());
         } else if (node instanceof Declaration declaration) {
             Expression expression = declaration.expression;

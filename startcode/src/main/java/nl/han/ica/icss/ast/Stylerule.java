@@ -60,7 +60,7 @@ public class Stylerule extends BodyStatement {
 			builder.append(' ');
 		}
 
-		builder.append("{\n    ");
+		builder.append("{\n  ");
 
 		if (!body.isEmpty()) {
 			ASTNode first = body.getFirst();
@@ -68,7 +68,7 @@ public class Stylerule extends BodyStatement {
 			first.addGeneratedCss(builder);
 
 			for (int i = 1; i < body.size(); i++) {
-				builder.append("\n    ");
+				builder.append("\n  ");
 				body.get(i).addGeneratedCss(builder);
 			}
 		}

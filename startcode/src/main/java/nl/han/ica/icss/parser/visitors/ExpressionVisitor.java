@@ -10,9 +10,6 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-import java.util.List;
-import java.util.function.BiFunction;
-
 public class ExpressionVisitor extends PrimaryExpressionVisitor {
     @FunctionalInterface
     interface BinaryExpressionCreator {
@@ -51,10 +48,5 @@ public class ExpressionVisitor extends PrimaryExpressionVisitor {
         return createBinaryExpression(multiplicative,
                 (lhs, rhs, operator) -> new MultiplyOperation(lhs, rhs)
         );
-    }
-
-    @Override
-    protected Expression aggregateResult(Expression aggregate, Expression nextResult) {
-        return super.aggregateResult(aggregate, nextResult);
     }
 }

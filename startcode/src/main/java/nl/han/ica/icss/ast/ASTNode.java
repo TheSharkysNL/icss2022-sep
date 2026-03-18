@@ -43,7 +43,11 @@ public class ASTNode {
     }
 
     public void setError(String description) {
-        this.error = new SemanticError(description);
+        this.setError(new SemanticError(description));
+    }
+
+    public void setError(SemanticError error) {
+        this.error = error;
     }
 
     public boolean hasError() {

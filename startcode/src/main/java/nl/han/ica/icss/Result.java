@@ -1,5 +1,7 @@
 package nl.han.ica.icss;
 
+import java.util.Optional;
+
 public sealed interface Result<T, E> {
     record Success<T, E>(T value) implements Result<T, E> {
         @Override
@@ -15,6 +17,11 @@ public sealed interface Result<T, E> {
         @Override
         public T value() {
             return value;
+        }
+
+        @Override
+        public Optional<E> ok() {
+            return Optional.empty();
         }
     }
     record Error<T, E>(E exception) implements Result<T, E> {
@@ -32,6 +39,11 @@ public sealed interface Result<T, E> {
         public T value() {
             throw new RuntimeException("Cannot get value for a error result.");
         }
+
+        @Override
+        public Optional<E> ok() {
+            return Optional.of(exception);
+        }
     }
 
     boolean isError();
@@ -39,4 +51,6 @@ public sealed interface Result<T, E> {
     E error();
 
     T value();
+
+    Optional<E> ok();
 }

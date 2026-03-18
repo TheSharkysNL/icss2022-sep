@@ -19,5 +19,20 @@ public class Checker {
 
     }
 
-    
+    public static <T> void popVariablesOffStack(IHANLinkedList<HashMap<String, T>> variables, BodyStatement parent) {
+        if (parent instanceof IfClause) { // only place variables in higher stacks if the variable was used within a if clause
+            HashMap<String, T> lastOnStack = variables.getFirst();
+            variables.removeFirst();
+            HashMap<String, T> newLastOnStack = variables.getFirst();
+            if (newLastOnStack != null) {
+                for (Map.Entry<String, T> entry : lastOnStack.entrySet()) {
+                    if (newLastOnStack.containsKey(entry.getKey())) { // if variable exists in a higher stack then replace its value
+                        newLastOnStack.put(entry.getKey(), entry.getValue());
+                    }
+                }
+            }
+        } else {
+            variables.removeFirst();
+        }
+    }
 }

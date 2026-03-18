@@ -58,7 +58,7 @@ public class StatementVisitor extends ICSSBaseVisitor<ASTNode> {
     }
 
     @Override
-    public ASTNode visitRule(ICSSParser.RuleContext rule) {
+    public ASTNode visitDeclaration(ICSSParser.DeclarationContext rule) {
         Expression expression = rule.expression()
                 .accept(new ExpressionVisitor());
 
