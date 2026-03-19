@@ -1,8 +1,10 @@
 package nl.han.ica.icss.parser.visitors;
 
 import nl.han.ica.icss.ast.*;
+import nl.han.ica.icss.ast.function.FunctionDeclaration;
 import nl.han.ica.icss.parser.ICSSBaseVisitor;
 import nl.han.ica.icss.parser.ICSSParser;
+import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,5 +67,37 @@ public class StatementVisitor extends ICSSBaseVisitor<ASTNode> {
         String property = rule.LOWER_IDENT().getText();
 
         return new Declaration(property, expression);
+    }
+
+    @Override
+    public ASTNode visitReturn(ICSSParser.ReturnContext ctx) {
+        return ctx.returnExpression()
+                .accept(new ReturnExpressionVisitor());
+    }
+
+    @Override
+    public ASTNode visitFunctionDeclaration(ICSSParser.FunctionDeclarationContext ctx) {
+        String name = ctx.CAPITAL_IDENT().getText();
+
+        ICSSParser.ParameterListContext current = ctx.parameterList();
+        ArrayList<String> parameters = new ArrayList<>();
+        while (current != null) {
+            String parameterName = current.parameter().CAPITAL_IDENT().getText();
+            parameters.add(parameterName);
+
+            current = current.parameterList();
+        }
+
+        List<ASTNode> body = ctx.statement()
+                .stream()
+                .map(stmt -> stmt.accept(this))
+                .toList();
+
+        return new FunctionDeclaration(name, parameters, body);
+    }
+
+    @Override
+    public ASTNode visitExpression(ICSSParser.ExpressionContext ctx) {
+        return ctx.accept(new ExpressionVisitor());
     }
 }

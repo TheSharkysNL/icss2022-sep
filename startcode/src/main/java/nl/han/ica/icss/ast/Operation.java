@@ -4,8 +4,10 @@ import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.icss.Result;
 import nl.han.ica.icss.Tuple;
 import nl.han.ica.icss.ast.types.ExpressionType;
+import nl.han.ica.icss.checker.Checker;
 import nl.han.ica.icss.checker.SemanticError;
 import nl.han.ica.icss.transforms.EvaluationError;
+import nl.han.ica.icss.transforms.Evaluator;
 import org.checkerframework.checker.nullness.Opt;
 
 import java.util.ArrayList;
@@ -50,9 +52,9 @@ public abstract class Operation extends Expression {
     }
 
     @Override
-    public Result<Literal, EvaluationError> tryEvaluate(IHANLinkedList<HashMap<String, Literal>> variables) {
-        Result<Literal, EvaluationError> lhsLiteral = lhs.tryEvaluate(variables);
-        Result<Literal, EvaluationError> rhsLiteral = rhs.tryEvaluate(variables);
+    public Result<Literal, EvaluationError> tryEvaluate(Evaluator evaluator) {
+        Result<Literal, EvaluationError> lhsLiteral = lhs.tryEvaluate(evaluator);
+        Result<Literal, EvaluationError> rhsLiteral = rhs.tryEvaluate(evaluator);
 
         return switch (new Tuple<>(lhsLiteral, rhsLiteral)) {
             case Tuple(Result.Success(Literal lhsValue), Result.Success(Literal rhsValue)) ->
@@ -68,17 +70,17 @@ public abstract class Operation extends Expression {
 
     protected abstract Result<Literal, EvaluationError> applyOperation(Literal a, Literal b);
 
-    private Result<ExpressionType, SemanticError> withExpressionType(IHANLinkedList<HashMap<String, ExpressionType>> variables, BiFunction<ExpressionType, ExpressionType, Result<ExpressionType, SemanticError>> function) {
-        return withExpressionType(variables, function, result -> result);
+    private Result<ExpressionType, SemanticError> withExpressionType(Checker checker, BiFunction<ExpressionType, ExpressionType, Result<ExpressionType, SemanticError>> function) {
+        return withExpressionType(checker, function, result -> result);
     }
 
-    private <T> T withExpressionType(IHANLinkedList<HashMap<String, ExpressionType>> variables, BiFunction<ExpressionType, ExpressionType, T> function, Function<Result<ExpressionType, SemanticError>, T> mapper) {
-        Result<ExpressionType, SemanticError> lhsResult = lhs.getExpressionType(variables);
+    private <T> T withExpressionType(Checker checker, BiFunction<ExpressionType, ExpressionType, T> function, Function<Result<ExpressionType, SemanticError>, T> mapper) {
+        Result<ExpressionType, SemanticError> lhsResult = lhs.getExpressionType(checker);
         if (lhsResult.isError()) {
             return mapper.apply(lhsResult);
         }
 
-        Result<ExpressionType, SemanticError> rhsResult = rhs.getExpressionType(variables);
+        Result<ExpressionType, SemanticError> rhsResult = rhs.getExpressionType(checker);
         if (rhsResult.isError()) {
             return mapper.apply(lhsResult);
         }
@@ -87,8 +89,8 @@ public abstract class Operation extends Expression {
     }
 
     @Override
-    public Result<ExpressionType, SemanticError> getExpressionType(IHANLinkedList<HashMap<String, ExpressionType>> variables) {
-        return withExpressionType(variables, (lhs, rhs) -> new Result.Success<>(switch (new Tuple<>(lhs, rhs)) {
+    public Result<ExpressionType, SemanticError> getExpressionType(Checker checker) {
+        return withExpressionType(checker, (lhs, rhs) -> new Result.Success<>(switch (new Tuple<>(lhs, rhs)) {
             case Tuple(ExpressionType first, ExpressionType second) when first == ExpressionType.SCALAR -> second;
             case Tuple(ExpressionType first, ExpressionType second) when second == ExpressionType.SCALAR -> first;
             case Tuple(ExpressionType first, ExpressionType ignored) -> first;
@@ -98,8 +100,8 @@ public abstract class Operation extends Expression {
     protected abstract Optional<SemanticError> validateExpressionInternal(ExpressionType lhs, ExpressionType rhs);
 
     @Override
-    public Optional<SemanticError> validateExpression(IHANLinkedList<HashMap<String, ExpressionType>> variables) {
-        return withExpressionType(variables, (lhs, rhs) -> {
+    public Optional<SemanticError> validateExpression(Checker checker) {
+        return withExpressionType(checker, (lhs, rhs) -> {
             if (lhs == ExpressionType.COLOR || rhs == ExpressionType.COLOR) { // can never add colors together
                 return Optional.of(new SemanticError("Cannot apply a '" + getNodeLabel() + "' operation with a color."));
             }

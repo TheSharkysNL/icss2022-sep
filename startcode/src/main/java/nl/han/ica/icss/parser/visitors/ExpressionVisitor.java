@@ -10,7 +10,7 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-public class ExpressionVisitor extends PrimaryExpressionVisitor {
+public class ExpressionVisitor extends PostFixExpressionVisitor {
     @FunctionalInterface
     interface BinaryExpressionCreator {
         Expression create(Expression lhs, Expression rhs, Token operator);

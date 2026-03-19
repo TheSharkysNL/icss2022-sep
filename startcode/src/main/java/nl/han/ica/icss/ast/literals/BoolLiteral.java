@@ -42,11 +42,6 @@ public class BoolLiteral extends NumericLiteral {
     }
 
     @Override
-    public Result<Literal, EvaluationError> tryEvaluate(IHANLinkedList<HashMap<String, Literal>> variables) {
-        return new Result.Success<>(this);
-    }
-
-    @Override
     public int getNumericValue() {
         return value ? 1 : 0;
     }

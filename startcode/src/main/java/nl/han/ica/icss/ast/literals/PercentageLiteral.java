@@ -45,11 +45,6 @@ public class PercentageLiteral extends NumericLiteral {
     }
 
     @Override
-    public Result<Literal, EvaluationError> tryEvaluate(IHANLinkedList<HashMap<String, Literal>> variables) {
-        return new Result.Success<>(this);
-    }
-
-    @Override
     public NumericLiteral fromNumericValue(int number) {
         return new PercentageLiteral(number);
     }
