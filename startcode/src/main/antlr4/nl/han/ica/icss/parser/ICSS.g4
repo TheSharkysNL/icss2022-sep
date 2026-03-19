@@ -45,6 +45,14 @@ MIN: '-';
 MUL: '*';
 ASSIGNMENT_OPERATOR: ':=';
 
+GT: '>';
+LT: '<';
+GE: '>=';
+LE: '<=';
+EQ: '==';
+NE: '!=';
+NEGATE: '!';
+
 //--- PARSER: ---
 selector: LOWER_IDENT #tagSelector | ID_IDENT #idSelector | CLASS_IDENT #classSelector;
 
@@ -56,10 +64,11 @@ elseStatement: ELSE OPEN_BRACE statement* CLOSE_BRACE;
 style: selector+ OPEN_BRACE statement* CLOSE_BRACE;
 
 // function declaration
-//return: RETURN expression SEMICOLON;
-//paramater: CAPITAL_IDENT;
-//parameter_list: paramater | parameter_list COMMA paramater;
-//functionDeclaration: FN CAPITAL_IDENT BOX_BRACKET_OPEN parameter_list BOX_BRACKET_CLOSE OPEN_BRACE statement* CLOSE_BRACE;
+returnExpression: expression #returnExpr | style #returnStyle;
+return: RETURN returnExpression SEMICOLON;
+parameter: CAPITAL_IDENT;
+parameterList: parameter | parameterList COMMA parameter;
+functionDeclaration: FN CAPITAL_IDENT BOX_BRACKET_OPEN parameterList? BOX_BRACKET_CLOSE OPEN_BRACE statement* CLOSE_BRACE;
 
 expressionLit
     : COLOR           #colorLiteral
@@ -72,22 +81,34 @@ expressionLit
 primaryExpression: CAPITAL_IDENT #variableIdent | expressionLit #expressionLiteral | (OPEN_BRACE expression CLOSE_BRACE) #braceExpression;
 
 // function call
-//postfixExpression
-//    : primaryExpression
-//    | postfixExpression BOX_BRACKET_OPEN expression_list BOX_BRACKET_CLOSE;
+expressionList: expression | expressionList COMMA expression;
+postfixExpression
+    : primaryExpression #normalPrimaryExpression
+    | CAPITAL_IDENT BOX_BRACKET_OPEN expressionList? BOX_BRACKET_CLOSE #functionCallExpression;
+prefixExpression
+    : postfixExpression #normalPostfixExpression
+    | NEGATE postfixExpression #negateExpression;
 
 multiplicativeExpression
-    : primaryExpression
-    | multiplicativeExpression MUL primaryExpression;
+    : prefixExpression
+    | multiplicativeExpression MUL prefixExpression;
 additiveExpression
     : multiplicativeExpression
     | additiveExpression PLUS multiplicativeExpression
     | additiveExpression MIN multiplicativeExpression;
 
-expression: additiveExpression;
-//expression_list: expression | expression_list COMMA expression;
+comparisonExpression
+    : additiveExpression
+    | comparisonExpression EQ additiveExpression
+    | comparisonExpression NE additiveExpression
+    | comparisonExpression GT additiveExpression
+    | comparisonExpression GE additiveExpression
+    | comparisonExpression LT additiveExpression
+    | comparisonExpression LE additiveExpression;
+
+expression: comparisonExpression;
 variableAssignment: CAPITAL_IDENT ASSIGNMENT_OPERATOR expression SEMICOLON;
 
-statement: style | variableAssignment | ifStatement | declaration;
+statement: style | variableAssignment | ifStatement | declaration | return | functionDeclaration | expression SEMICOLON;
 
 stylesheet: statement+|EOF;

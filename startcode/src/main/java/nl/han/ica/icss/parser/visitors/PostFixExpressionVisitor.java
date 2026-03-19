@@ -8,7 +8,7 @@ import java.util.ArrayList;
 
 public class PostFixExpressionVisitor extends PrimaryExpressionVisitor {
     @Override
-    public Expression visitFunctionCallExpression(ICSSParser.FunctionCallExpressionContext ctx) {
+    public final Expression visitFunctionCallExpression(ICSSParser.FunctionCallExpressionContext ctx) {
         String name = ctx.CAPITAL_IDENT().getText();
 
         ArrayList<Expression> arguments = new ArrayList<>();
@@ -25,7 +25,7 @@ public class PostFixExpressionVisitor extends PrimaryExpressionVisitor {
     }
 
     @Override
-    public Expression visitNormalPrimaryExpression(ICSSParser.NormalPrimaryExpressionContext ctx) {
+    public final Expression visitNormalPrimaryExpression(ICSSParser.NormalPrimaryExpressionContext ctx) {
         return ctx.primaryExpression()
                 .accept(this);
     }

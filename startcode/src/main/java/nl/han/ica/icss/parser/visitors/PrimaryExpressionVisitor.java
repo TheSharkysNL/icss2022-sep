@@ -11,7 +11,7 @@ public class PrimaryExpressionVisitor extends ExpressionLiteralVisitor {
     }
 
     @Override
-    public Expression visitBraceExpression(ICSSParser.BraceExpressionContext ctx) {
+    public final Expression visitBraceExpression(ICSSParser.BraceExpressionContext ctx) {
         return ctx.expression()
                 .accept(new ExpressionVisitor());
     }

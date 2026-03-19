@@ -1,7 +1,9 @@
 package nl.han.ica.icss.ast;
 
 import nl.han.ica.icss.Result;
+import nl.han.ica.icss.ast.literals.BoolLiteral;
 import nl.han.ica.icss.ast.literals.ColorLiteral;
+import nl.han.ica.icss.ast.operations.EqualityOperation;
 import nl.han.ica.icss.transforms.EvaluationError;
 
 import java.util.Optional;
@@ -42,5 +44,25 @@ public abstract class NumericLiteral extends Literal {
         return applyOperation(rhs, (a, b) -> a * b)
                 .map(lit -> (Result<Literal, EvaluationError>)new Result.Success<Literal, EvaluationError>(lit))
                 .orElse(super.mul(rhs));
+    }
+
+    @Override
+    public Result<Literal, EvaluationError> compare(Literal rhs, EqualityOperation.EqualityOperationType operation) {
+        if (!(rhs instanceof NumericLiteral rhsNumericLit)) {
+            return super.compare(rhs, operation);
+        }
+
+        int rhsNumeric = rhsNumericLit.getNumericValue();
+        int selfNumeric = getNumericValue();
+        Literal afterOperation = new BoolLiteral(operation.evaluate(selfNumeric, rhsNumeric));
+
+        return new Result.Success<>(afterOperation);
+    }
+
+    @Override
+    public Result<Literal, EvaluationError> negate() {
+        int selfNumeric = getNumericValue();
+
+        return new Result.Success<>(fromNumericValue(~selfNumeric));
     }
 }

@@ -48,7 +48,7 @@ public class BoolLiteral extends NumericLiteral {
 
     @Override
     public NumericLiteral fromNumericValue(int number) {
-        return new BoolLiteral(number >= 1);
+        return new BoolLiteral(number != 0);
     }
 
     @Override

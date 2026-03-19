@@ -15,6 +15,6 @@ public class InvalidOperation extends EvaluationError {
 
     @Override
     public String toString() {
-        return "Invalid operation. Cannot perform a " + operation + " between the types: '" + lhs.getNodeLabel() + "' and '" + rhs.getNodeLabel() + "'.";
+        return "Invalid operation. Cannot perform a " + operation + " between the types: '" + lhs.getNodeLabel() + "' and '" + (rhs == null ? "undefined" : rhs.getNodeLabel()) + "'.";
     }
 }

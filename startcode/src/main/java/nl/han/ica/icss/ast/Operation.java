@@ -100,13 +100,7 @@ public abstract class Operation extends Expression {
     protected abstract Optional<SemanticError> validateExpressionInternal(ExpressionType lhs, ExpressionType rhs);
 
     @Override
-    public Optional<SemanticError> validateExpression(Checker checker) {
-        return withExpressionType(checker, (lhs, rhs) -> {
-            if (lhs == ExpressionType.COLOR || rhs == ExpressionType.COLOR) { // can never add colors together
-                return Optional.of(new SemanticError("Cannot apply a '" + getNodeLabel() + "' operation with a color."));
-            }
-
-            return validateExpressionInternal(lhs, rhs);
-        }, Result::ok);
+    public final Optional<SemanticError> validateExpression(Checker checker) {
+        return withExpressionType(checker, this::validateExpressionInternal, Result::ok);
     }
 }

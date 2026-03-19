@@ -2,6 +2,7 @@ package nl.han.ica.icss.ast.operations;
 
 import nl.han.ica.icss.Result;
 import nl.han.ica.icss.Tuple;
+import nl.han.ica.icss.ast.BinaryOperation;
 import nl.han.ica.icss.ast.Expression;
 import nl.han.ica.icss.ast.Literal;
 import nl.han.ica.icss.ast.Operation;
@@ -11,7 +12,7 @@ import nl.han.ica.icss.transforms.EvaluationError;
 
 import java.util.Optional;
 
-public class MultiplyOperation extends Operation {
+public class MultiplyOperation extends BinaryOperation {
 
     public MultiplyOperation() {
         super();
@@ -28,7 +29,7 @@ public class MultiplyOperation extends Operation {
     }
 
     @Override
-    protected Optional<SemanticError> validateExpressionInternal(ExpressionType lhs, ExpressionType rhs) {
+    protected Optional<SemanticError> validateBinaryExpressionInternal(ExpressionType lhs, ExpressionType rhs) {
         return switch (new Tuple<>(lhs, rhs)) {
             case Tuple(ExpressionType l, ExpressionType ignored) when l == ExpressionType.SCALAR -> Optional.empty();
             case Tuple(ExpressionType ignored, ExpressionType r) when r == ExpressionType.SCALAR -> Optional.empty();
