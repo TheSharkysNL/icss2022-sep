@@ -5,9 +5,11 @@ import nl.han.ica.icss.ast.function.FunctionDeclaration;
 import nl.han.ica.icss.parser.ICSSBaseVisitor;
 import nl.han.ica.icss.parser.ICSSParser;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 public class StatementVisitor extends ICSSBaseVisitor<ASTNode> {
     @Override
@@ -79,14 +81,11 @@ public class StatementVisitor extends ICSSBaseVisitor<ASTNode> {
     public ASTNode visitFunctionDeclaration(ICSSParser.FunctionDeclarationContext ctx) {
         String name = ctx.CAPITAL_IDENT().getText();
 
-        ICSSParser.ParameterListContext current = ctx.parameterList();
-        ArrayList<String> parameters = new ArrayList<>();
-        while (current != null) {
-            String parameterName = current.parameter().CAPITAL_IDENT().getText();
-            parameters.add(parameterName);
-
-            current = current.parameterList();
-        }
+        List<String> parameters = getList(
+                ctx.parameterList(),
+                ICSSParser.ParameterListContext::parameterList,
+                p -> p.parameter().CAPITAL_IDENT().getText()
+        );
 
         List<ASTNode> body = ctx.statement()
                 .stream()
@@ -98,6 +97,53 @@ public class StatementVisitor extends ICSSBaseVisitor<ASTNode> {
 
     @Override
     public ASTNode visitExpression(ICSSParser.ExpressionContext ctx) {
-        return ctx.accept(new ExpressionVisitor());
+        return ctx.comparisonExpression().accept(new ExpressionVisitor());
+    }
+
+    @Override
+    public ASTNode visitFor(ICSSParser.ForContext forContext) {
+        List<VariableAssignment> initialVariableAssignments = getList(
+                forContext.init,
+                ICSSParser.VariableAssignmentListContext::variableAssignmentList,
+                // must be of type variable assignment here
+                v -> (VariableAssignment)v.variableAssignment().accept(this)
+        );
+
+        Expression loopExpression = forContext.expression()
+                .accept(new ExpressionVisitor());
+
+        List<VariableAssignment> loopVariableAssignments = getList(
+                forContext.loop,
+                ICSSParser.VariableAssignmentListContext::variableAssignmentList,
+                // must be of type variable assignment here
+                v -> (VariableAssignment)v.variableAssignment().accept(this)
+        );
+
+        List<ASTNode> body = forContext
+                .statement()
+                .stream()
+                .map(stmt -> stmt.accept(this))
+                .toList();
+
+        return new ForStatement(initialVariableAssignments, loopExpression, loopVariableAssignments, body);
+    }
+
+    public static <TIn, TOut> List<TOut> getList(TIn in, Function<TIn, TIn> next, Function<TIn, TOut> output) {
+        TIn current = in;
+        ArrayList<TOut> out = new ArrayList<>();
+
+        while (current != null) {
+            TOut value = output.apply(current);
+            out.add(value);
+
+            current = next.apply(current);
+        }
+
+        return out;
+    }
+
+    @Override
+    protected ASTNode aggregateResult(ASTNode aggregate, ASTNode nextResult) {
+        return nextResult != null ? nextResult : aggregate;
     }
 }

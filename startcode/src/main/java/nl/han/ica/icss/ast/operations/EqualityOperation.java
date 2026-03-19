@@ -80,4 +80,9 @@ public class EqualityOperation extends Operation {
     public Result<ExpressionType, SemanticError> getExpressionType(Checker checker) {
         return new Result.Success<>(ExpressionType.BOOL); // comparison always returns a boolean
     }
+
+    @Override
+    public String getNodeLabel() {
+        return "Equality";
+    }
 }

@@ -68,6 +68,51 @@ public class Evaluator implements Transform {
         return result;
     }
 
+    public Result<List<ASTNode>, EvaluationError> evaluateFor(ForStatement forStatement, boolean isInFunction) {
+        List<ASTNode> newBody = new ArrayList<>();
+        variableValues.addFirst(new HashMap<>());
+
+        for (VariableAssignment variableAssignment : forStatement.initialAssignments) { // evaluate all initial assignments
+            Optional<EvaluationError> error = evaluateVariableAssignment(variableAssignment);
+            if (error.isPresent()) {
+                return new Result.Error<>(error.get());
+            }
+        }
+
+        while (true) {
+            Result<Literal, EvaluationError> expressionEvaluation = forStatement.loopExpression.tryEvaluate(this);
+
+            if (expressionEvaluation.isError()) {
+                return new Result.Error<>(expressionEvaluation.error());
+            }
+
+            if (!(expressionEvaluation.value() instanceof BoolLiteral bool)) {
+                return new Result.Error<>(new InvalidType(expressionEvaluation.value().getNodeLabel(), "BOOL"));
+            }
+
+            if (!bool.value) { // check expression to see if the loop is at the end
+                break;
+            }
+
+            Result<List<ASTNode>, EvaluationError> result = evaluateBody(forStatement, isInFunction); // evaluate the for loop body with the current variables
+            if (result.isError()) {
+                return result;
+            }
+
+            newBody.addAll(result.value());
+
+            for (VariableAssignment loopVariableAssignments : forStatement.loopAssignments) { // update the variables for the loop
+                Optional<EvaluationError> error = evaluateVariableAssignment(loopVariableAssignments);
+                if (error.isPresent()) {
+                    return new Result.Error<>(error.get());
+                }
+            }
+        }
+
+        variableValues.removeFirst();
+        return new Result.Success<>(newBody);
+    }
+
     private Result<List<ASTNode>, EvaluationError> evaluateBody(BodyStatement body, boolean isInFunction) {
         ArrayList<ASTNode> newBody = new ArrayList<>();
         variableValues.addFirst(new HashMap<>());
@@ -106,6 +151,16 @@ public class Evaluator implements Transform {
                 continue;
             }
 
+            if (child instanceof ForStatement forStatement) {
+                Result<List<ASTNode>, EvaluationError> result = evaluateFor(forStatement, isInFunction);
+                if (result.isError()) {
+                    return result;
+                }
+
+                newBody.addAll(result.value());
+                continue;
+            }
+
             if (child instanceof FunctionDeclaration functionDeclaration) {
                 functions.getFirst()
                         .put(functionDeclaration.name, functionDeclaration);
@@ -118,7 +173,9 @@ public class Evaluator implements Transform {
                     return newInnerBody;
                 }
 
-                innerBody.body = newInnerBody.value();
+                if (!isInFunction) {
+                    innerBody.body = newInnerBody.value();
+                }
             }
 
             Result<Optional<ASTNode>, EvaluationError> evaluation = evaluate(child, isInFunction);
@@ -136,21 +193,25 @@ public class Evaluator implements Transform {
         return new Result.Success<>(newBody);
     }
 
+    private Optional<EvaluationError> evaluateVariableAssignment(VariableAssignment variableAssignment) {
+        Expression expression = variableAssignment.expression;
+
+        Result<Literal, EvaluationError> literal = expression.tryEvaluate(this);
+        if (literal.isError()) {
+            return literal.ok();
+        }
+
+        HashMap<String, Literal> map =  variableValues.getFirst();
+        map.put(variableAssignment.name.name, literal.value());
+
+        return Optional.empty();
+    }
+
     private Result<Optional<ASTNode>, EvaluationError> evaluate(ASTNode node, boolean isInFunction) {
         if (node instanceof VariableAssignment variableAssignment) {
-            Expression expression = variableAssignment.expression;
-
-            Result<Literal, EvaluationError> literal = expression.tryEvaluate(this);
-            if (literal.isError()) {
-                return new Result.Error<>(literal.error());
-            }
-
-            variableAssignment.expression = literal.value();
-
-            HashMap<String, Literal> map =  variableValues.getFirst();
-            map.put(variableAssignment.name.name, literal.value());
-
-            return new Result.Success<>(Optional.empty());
+            return evaluateVariableAssignment(variableAssignment)
+                    .map(error -> (Result<Optional<ASTNode>, EvaluationError>)new Result.Error<Optional<ASTNode>, EvaluationError>(error))
+                    .orElse(new Result.Success<>(Optional.empty()));
         } else if (node instanceof Declaration declaration) {
             Expression expression = declaration.expression;
 
@@ -159,7 +220,7 @@ public class Evaluator implements Transform {
                 return new Result.Error<>(literal.error());
             }
 
-            declaration.expression = literal.value();
+            return new Result.Success<>(Optional.of(new Declaration(declaration.property.name, literal.value())));
         } else if (isInFunction && node instanceof ExpressionReturnStatement returnStatement) {
             Expression expression = returnStatement.expression;
 
@@ -168,14 +229,15 @@ public class Evaluator implements Transform {
                 return new Result.Error<>(literal.error());
             }
 
-            returnStatement.expression = literal.value();
+            return new Result.Success<>(Optional.of(new ExpressionReturnStatement(literal.value())));
         } else if (isInFunction && node instanceof StyleReturnStatement styleReturnStatement) {
             Result<List<ASTNode>, EvaluationError> result = evaluateBody(styleReturnStatement.style, isInFunction);
             if (result.isError()) {
                 return new Result.Error<>(result.error());
             }
 
-            styleReturnStatement.style.body = result.value();
+            Stylerule stylerule = new Stylerule(styleReturnStatement.style.selectors, result.value());
+            return new Result.Success<>(Optional.of(new StyleReturnStatement(stylerule)));
         } else if (node instanceof FunctionCall functionCall) {
             Optional<Stylerule> style = functionCall.evaluateStyle(this);
             if (style.isPresent()) {

@@ -139,7 +139,7 @@ public class Checker {
         variableTypes.addFirst(new HashMap<>());
         functions.addFirst(new HashMap<>());
 
-        for (ASTNode child : body.body) {
+        for (ASTNode child : body.getChildren()) {
             if (child instanceof FunctionDeclaration declaration) {
                 functions.getFirst()
                         .put(declaration.name, declaration);
@@ -182,6 +182,17 @@ public class Checker {
                 } else {
                     if (result.value() != ExpressionType.BOOL) {
                         ifClause.setError("The conditional expression of the if statement must be a boolean expression.");
+                    }
+                }
+            }
+
+            if (child instanceof ForStatement forStatement) {
+                Result<ExpressionType, SemanticError> result = forStatement.loopExpression.getExpressionType(this);
+                if (result.isError()) {
+                    forStatement.setError(result.error());
+                } else {
+                    if (result.value() != ExpressionType.BOOL) {
+                        forStatement.setError("The conditional expression of the for statement must be a boolean expression.");
                     }
                 }
             }

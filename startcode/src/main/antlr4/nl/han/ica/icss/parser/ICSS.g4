@@ -13,6 +13,9 @@ FN: 'fn';
 RETURN: 'return';
 COMMA: ',';
 
+// For support:
+FOR: 'for';
+
 //Literals
 TRUE: 'TRUE';
 FALSE: 'FALSE';
@@ -70,6 +73,10 @@ parameter: CAPITAL_IDENT;
 parameterList: parameter | parameterList COMMA parameter;
 functionDeclaration: FN CAPITAL_IDENT BOX_BRACKET_OPEN parameterList? BOX_BRACKET_CLOSE OPEN_BRACE statement* CLOSE_BRACE;
 
+// for loop
+variableAssignmentList: variableAssignment | variableAssignmentList COMMA variableAssignment;
+for: FOR BOX_BRACKET_OPEN init=variableAssignmentList? SEMICOLON expression SEMICOLON loop=variableAssignmentList? BOX_BRACKET_CLOSE OPEN_BRACE statement* CLOSE_BRACE;
+
 expressionLit
     : COLOR           #colorLiteral
     | PIXELSIZE       #pixelLiteral
@@ -107,8 +114,8 @@ comparisonExpression
     | comparisonExpression LE additiveExpression;
 
 expression: comparisonExpression;
-variableAssignment: CAPITAL_IDENT ASSIGNMENT_OPERATOR expression SEMICOLON;
+variableAssignment: CAPITAL_IDENT ASSIGNMENT_OPERATOR expression;
 
-statement: style | variableAssignment | ifStatement | declaration | return | functionDeclaration | expression SEMICOLON;
+statement: style | variableAssignment SEMICOLON | ifStatement | declaration | return | functionDeclaration | expression SEMICOLON | for;
 
 stylesheet: statement+|EOF;

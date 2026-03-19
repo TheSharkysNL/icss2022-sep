@@ -55,4 +55,10 @@ public class ExpressionVisitor extends PrefixExpressionVisitor {
     public Expression visitComparisonExpression(ICSSParser.ComparisonExpressionContext comparison) {
         return createBinaryExpression(comparison, EqualityOperation::new);
     }
+
+    @Override
+    public Expression visitExpression(ICSSParser.ExpressionContext ctx) {
+        return ctx.comparisonExpression()
+                .accept(this);
+    }
 }

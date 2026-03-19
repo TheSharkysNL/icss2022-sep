@@ -53,4 +53,9 @@ public class NegateOperation extends Expression {
     public Result<ExpressionType, SemanticError> getExpressionType(Checker checker) {
         return new Result.Success<>(ExpressionType.BOOL); // negate always returns a boolean
     }
+
+    @Override
+    public String getNodeLabel() {
+        return "Negate";
+    }
 }
