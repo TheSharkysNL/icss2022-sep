@@ -8,12 +8,16 @@ import nl.han.ica.icss.ast.function.ExpressionReturnStatement;
 import nl.han.ica.icss.ast.function.FunctionCall;
 import nl.han.ica.icss.ast.function.FunctionDeclaration;
 import nl.han.ica.icss.ast.function.StyleReturnStatement;
+import nl.han.ica.icss.ast.iImport.ImportStatement;
 import nl.han.ica.icss.ast.literals.BoolLiteral;
 import nl.han.ica.icss.checker.Checker;
+import nl.han.ica.icss.checker.SemanticError;
 import org.checkerframework.checker.nullness.Opt;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Evaluator implements Transform {
 
@@ -165,6 +169,31 @@ public class Evaluator implements Transform {
                 functions.getFirst()
                         .put(functionDeclaration.name, functionDeclaration);
                 continue; // Skip for now as the function will be evaluated later at a function call expression.
+            }
+
+            if (child instanceof ImportStatement importStatement) {
+                if (importStatement.isImported) {
+                    continue;
+                }
+                importStatement.isImported = true; // so that a function call doesn't evaluate imports more than once
+
+                Result<AST, SemanticError> importedAst = importStatement.getImportedSyntaxTree();
+                if (importedAst.isError()) {
+                    return new Result.Error<>(new EvaluationError(importedAst.error().toString()));
+                }
+
+                // add the nodes at the next position so that when it loops around
+                // it will evaluate the nodes within the imported syntax.
+                body.body = Stream.concat( // use concat here as list will most likely be immutable
+                                Stream.concat(
+                                        body.body.subList(0, i).stream(),
+                                        importedAst.value().root.body.stream()
+                                ),
+                                body.body.subList(i + 1, body.body.size() - i).stream()
+                        )
+                        .toList();
+                i--; // because the import statement is removed
+                continue;
             }
 
             if (child instanceof BodyStatement innerBody) {

@@ -16,6 +16,14 @@ COMMA: ',';
 // For support:
 FOR: 'for';
 
+// import support:
+IMPORT: 'import';
+FROM: 'from';
+FUNCTIONS: 'functions';
+STYLES: 'styles';
+STRING: '"' .*? '"';
+AND: 'and';
+
 //Literals
 TRUE: 'TRUE';
 FALSE: 'FALSE';
@@ -77,6 +85,14 @@ functionDeclaration: FN CAPITAL_IDENT BOX_BRACKET_OPEN parameterList? BOX_BRACKE
 variableAssignmentList: variableAssignment | variableAssignmentList COMMA variableAssignment;
 for: FOR BOX_BRACKET_OPEN init=variableAssignmentList? SEMICOLON expression SEMICOLON loop=variableAssignmentList? BOX_BRACKET_CLOSE OPEN_BRACE statement* CLOSE_BRACE;
 
+// import
+importItem: CAPITAL_IDENT #namedImportItem | MUL #wildcardImportItem;
+importList: importItem | importList COMMA importItem;
+importItems: OPEN_BRACE importList CLOSE_BRACE;
+importType: FUNCTIONS importItems? #functionsImportType | STYLES #stylesImportType | MUL #bothImportType;
+importTypeList: importType | importTypeList AND importType;
+iImport: FROM STRING IMPORT importTypeList SEMICOLON;
+
 expressionLit
     : COLOR           #colorLiteral
     | PIXELSIZE       #pixelLiteral
@@ -116,6 +132,6 @@ comparisonExpression
 expression: comparisonExpression;
 variableAssignment: CAPITAL_IDENT ASSIGNMENT_OPERATOR expression;
 
-statement: style | variableAssignment SEMICOLON | ifStatement | declaration | return | functionDeclaration | expression SEMICOLON | for;
+statement: style | variableAssignment SEMICOLON | ifStatement | declaration | return | functionDeclaration | expression SEMICOLON | for | iImport;
 
 stylesheet: statement+|EOF;

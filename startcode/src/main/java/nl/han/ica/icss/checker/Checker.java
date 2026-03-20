@@ -7,9 +7,10 @@ import nl.han.ica.icss.ast.*;
 import nl.han.ica.icss.ast.function.ExpressionReturnStatement;
 import nl.han.ica.icss.ast.function.FunctionDeclaration;
 import nl.han.ica.icss.ast.function.StyleReturnStatement;
+import nl.han.ica.icss.ast.iImport.ImportStatement;
 import nl.han.ica.icss.ast.types.ExpressionType;
-import org.checkerframework.framework.qual.LiteralKind;
 
+import java.io.File;
 import java.util.*;
 import java.util.function.Function;
 
@@ -195,6 +196,29 @@ public class Checker {
                         forStatement.setError("The conditional expression of the for statement must be a boolean expression.");
                     }
                 }
+            }
+
+            if (child instanceof ImportStatement importStatement) {
+                File file = new File(importStatement.location);
+                if (!file.exists()) {
+                    importStatement.setError("Cannot find the file to import: '" + file.toPath().toAbsolutePath() + "'.");
+                    continue;
+                }
+
+                if (!file.canRead()) {
+                    importStatement.setError("Cannot read file at: '" + file.toPath().toAbsolutePath() + "'.");
+                    continue;
+                }
+
+                Result<HashMap<String, FunctionDeclaration>, SemanticError> importedFunctions = importStatement.validateAndGetImportedFunctions(file, this);
+                if (importedFunctions.isError()) {
+                    importStatement.setError(importedFunctions.error());
+                    continue;
+                }
+
+                functions.getFirst()
+                        .putAll(importedFunctions.value()); // add the imported functions
+                continue;
             }
 
             if (child instanceof BodyStatement innerBody) {

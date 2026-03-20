@@ -2,6 +2,8 @@ package nl.han.ica.icss.parser.visitors;
 
 import nl.han.ica.icss.ast.*;
 import nl.han.ica.icss.ast.function.FunctionDeclaration;
+import nl.han.ica.icss.ast.iImport.ImportItem;
+import nl.han.ica.icss.ast.iImport.ImportStatement;
 import nl.han.ica.icss.parser.ICSSBaseVisitor;
 import nl.han.ica.icss.parser.ICSSParser;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -126,6 +128,20 @@ public class StatementVisitor extends ICSSBaseVisitor<ASTNode> {
                 .toList();
 
         return new ForStatement(initialVariableAssignments, loopExpression, loopVariableAssignments, body);
+    }
+
+    @Override
+    public ASTNode visitIImport(ICSSParser.IImportContext iImport) {
+        String location = iImport.STRING().getText();
+        String locationWithoutQuotes = location.substring(1, location.length() - 1);
+
+        List<ImportStatement.ImportType> importTypes = getList(
+                iImport.importTypeList(),
+                ICSSParser.ImportTypeListContext::importTypeList,
+                i -> i.importType().accept(new ImportTypeVisitor())
+        );
+
+        return new ImportStatement(locationWithoutQuotes, importTypes);
     }
 
     public static <TIn, TOut> List<TOut> getList(TIn in, Function<TIn, TIn> next, Function<TIn, TOut> output) {
