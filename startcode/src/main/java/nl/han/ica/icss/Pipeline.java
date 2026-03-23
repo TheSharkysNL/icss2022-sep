@@ -27,7 +27,13 @@ public class Pipeline implements ANTLRErrorListener {
     private boolean transformed = false;
     private List<String> errors;
 
+    private TransformationConfig config;
+
     public Pipeline() {
+        this(new TransformationConfig(false, false));
+    }
+    public Pipeline(TransformationConfig config) {
+        this.config = config;
         errors = new ArrayList<>();
     }
 
@@ -109,7 +115,7 @@ public class Pipeline implements ANTLRErrorListener {
         if(ast == null)
             return;
 
-        (new Evaluator()).apply(ast);
+        (new Evaluator()).apply(ast, config);
 
 
         transformed = errors.isEmpty();

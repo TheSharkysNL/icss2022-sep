@@ -1,8 +1,11 @@
 package nl.han.ica.icss.transforms;
 
+import nl.han.ica.datastructures.HANHashMap;
 import nl.han.ica.datastructures.HANLinkedList;
+import nl.han.ica.datastructures.IHANHashMap;
 import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.icss.Result;
+import nl.han.ica.icss.TransformationConfig;
 import nl.han.ica.icss.ast.*;
 import nl.han.ica.icss.ast.function.*;
 import nl.han.ica.icss.ast.iImport.ImportStatement;
@@ -18,14 +21,16 @@ import java.util.stream.Stream;
 
 public class Evaluator implements Transform {
 
-    private final IHANLinkedList<HashMap<String, Literal>> variableValues;
-    private final IHANLinkedList<HashMap<String, FunctionDeclaration>> functions;
-    private final HashMap<String, HashMap<String, Literal>> importedVariableValues;
+    private final IHANLinkedList<IHANHashMap<String, Literal>> variableValues;
+    private final IHANLinkedList<IHANHashMap<String, FunctionDeclaration>> functions;
+    private final IHANHashMap<String, IHANHashMap<String, Literal>> importedVariableValues;
+
+    private TransformationConfig config;
 
     public Evaluator() {
         functions = new HANLinkedList<>();
         variableValues = new HANLinkedList<>();
-        importedVariableValues = new HashMap<>();
+        importedVariableValues = new HANHashMap<>();
     }
 
     public Optional<Literal> getVariable(String name) {
@@ -37,7 +42,9 @@ public class Evaluator implements Transform {
     }
 
     @Override
-    public void apply(AST ast) {
+    public void apply(AST ast, TransformationConfig config) {
+        this.config = config;
+
         Result<List<ASTNode>, EvaluationError> styleSheetBody = evaluateBody(ast.root, false);
         if (styleSheetBody.isError()) { // evalution errors should never happen as the checker should have caught them
             throw new RuntimeException(styleSheetBody.error().toString());
@@ -52,7 +59,7 @@ public class Evaluator implements Transform {
             return new Result.Error<>(new InvalidArgumentCount(functionDeclaration.parameters.size(), arguments.size(), functionDeclaration.name));
         }
 
-        HashMap<String, Literal> functionVariables = new HashMap<>(arguments.size());
+        IHANHashMap<String, Literal> functionVariables = new HANHashMap<>(arguments.size());
         for (int i = 0; i < arguments.size(); i++) {
             Expression argument = arguments.get(i);
             String parameter = functionDeclaration.parameters.get(i);
@@ -68,7 +75,7 @@ public class Evaluator implements Transform {
         if (functionDeclaration instanceof ImportedFunctionDeclaration importedFunctionDeclaration) {
             String location = importedFunctionDeclaration.location;
 
-            HashMap<String, Literal> variables = importedVariableValues.get(location);
+            IHANHashMap<String, Literal> variables = importedVariableValues.get(location);
             variableValues.addFirst(variables);
         }
 
@@ -85,7 +92,7 @@ public class Evaluator implements Transform {
 
     public Result<List<ASTNode>, EvaluationError> evaluateFor(ForStatement forStatement, boolean isInFunction) {
         List<ASTNode> newBody = new ArrayList<>();
-        variableValues.addFirst(new HashMap<>());
+        variableValues.addFirst(new HANHashMap<>());
 
         for (VariableAssignment variableAssignment : forStatement.initialAssignments) { // evaluate all initial assignments
             Optional<EvaluationError> error = evaluateVariableAssignment(variableAssignment);
@@ -130,8 +137,8 @@ public class Evaluator implements Transform {
 
     private Result<List<ASTNode>, EvaluationError> evaluateBody(BodyStatement body, boolean isInFunction) {
         ArrayList<ASTNode> newBody = new ArrayList<>();
-        variableValues.addFirst(new HashMap<>());
-        functions.addFirst(new HashMap<>());
+        variableValues.addFirst(new HANHashMap<>());
+        functions.addFirst(new HANHashMap<>());
 
         for (int i = 0; i < body.body.size(); i++) {
             ASTNode child = body.body.get(i);
@@ -179,7 +186,9 @@ public class Evaluator implements Transform {
             if (child instanceof FunctionDeclaration functionDeclaration) {
                 functions.getFirst()
                         .put(functionDeclaration.name, functionDeclaration);
-                newBody.add(functionDeclaration);
+                if (config.keepFunctions()) {
+                    newBody.add(functionDeclaration);
+                }
                 continue; // Skip for now as the function will be evaluated later at a function call expression.
             }
 
@@ -194,7 +203,7 @@ public class Evaluator implements Transform {
                     functions.getFirst()
                             .put(functionDeclaration.name, functionDeclaration);
                 }
-                HashMap<String, Literal> importedVariables = new HashMap<>(importStatement.getImportedVariables().size());
+                HANHashMap<String, Literal> importedVariables = new HANHashMap<>(importStatement.getImportedVariables().size());
                 for (VariableAssignment variableAssignment : importStatement.getImportedVariables()) {
                     // expression here should already be a literal as it should be evaluated by the import statement
                     importedVariables.put(variableAssignment.name.name, (Literal)variableAssignment.expression);
@@ -238,7 +247,7 @@ public class Evaluator implements Transform {
             return literal.ok();
         }
 
-        HashMap<String, Literal> map =  variableValues.getFirst();
+        IHANHashMap<String, Literal> map =  variableValues.getFirst();
         map.put(variableAssignment.name.name, literal.value());
 
         return Optional.empty();
@@ -248,7 +257,13 @@ public class Evaluator implements Transform {
         if (node instanceof VariableAssignment variableAssignment) {
             return evaluateVariableAssignment(variableAssignment)
                     .map(error -> (Result<Optional<ASTNode>, EvaluationError>)new Result.Error<Optional<ASTNode>, EvaluationError>(error))
-                    .orElse(new Result.Success<>(Optional.of(new VariableAssignment(variableAssignment.name, variableAssignment.expression.tryEvaluate(this).value()))));
+                    .orElseGet(() -> {
+                        Optional<ASTNode> returnedAssignment = Optional.empty();
+                        if (config.keepVariables()) {
+                            returnedAssignment = Optional.of(new VariableAssignment(variableAssignment.name, variableAssignment.expression.tryEvaluate(this).value()));
+                        }
+                        return new Result.Success<>(returnedAssignment);
+                    });
         } else if (node instanceof Declaration declaration) {
             Expression expression = declaration.expression;
 
@@ -284,6 +299,4 @@ public class Evaluator implements Transform {
 
         return new Result.Success<>(Optional.of(node));
     }
-
-    
 }

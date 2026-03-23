@@ -2,6 +2,7 @@ package nl.han.ica.icss.ast.iImport;
 
 import nl.han.ica.icss.Pipeline;
 import nl.han.ica.icss.Result;
+import nl.han.ica.icss.TransformationConfig;
 import nl.han.ica.icss.ast.*;
 import nl.han.ica.icss.ast.function.FunctionDeclaration;
 import nl.han.ica.icss.ast.function.ImportedFunctionDeclaration;
@@ -77,7 +78,7 @@ public class ImportStatement extends ASTNode {
         try {
             String fileString = Files.readString(file.toPath());
 
-            Pipeline pipeline = new Pipeline();
+            Pipeline pipeline = new Pipeline(new TransformationConfig(true, true));
             pipeline.parseString(fileString);
             pipeline.check();
             if (!pipeline.getErrors().isEmpty()) {

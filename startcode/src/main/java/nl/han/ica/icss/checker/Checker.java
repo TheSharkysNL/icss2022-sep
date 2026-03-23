@@ -1,6 +1,8 @@
 package nl.han.ica.icss.checker;
 
+import nl.han.ica.datastructures.HANHashMap;
 import nl.han.ica.datastructures.HANLinkedList;
+import nl.han.ica.datastructures.IHANHashMap;
 import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.icss.Result;
 import nl.han.ica.icss.ast.*;
@@ -17,8 +19,8 @@ import java.util.function.Function;
 
 public class Checker {
 
-    private final IHANLinkedList<HashMap<String, ExpressionType>> variableTypes = new HANLinkedList<>();
-    private final IHANLinkedList<HashMap<String, FunctionDeclaration>> functions = new HANLinkedList<>();
+    private final IHANLinkedList<IHANHashMap<String, ExpressionType>> variableTypes = new HANLinkedList<>();
+    private final IHANLinkedList<IHANHashMap<String, FunctionDeclaration>> functions = new HANLinkedList<>();
 
     public void check(AST ast) {
         checkBodyStatements(ast.root);
@@ -37,7 +39,7 @@ public class Checker {
             return mapper.apply(new SemanticError("Invalid argument count, expected: " + declaration.parameters.size() + " arguments but got " + arguments.size() + " arguments"));
         }
 
-        HashMap<String, ExpressionType> parameterExpressionMap = new HashMap<>(arguments.size());
+        HANHashMap<String, ExpressionType> parameterExpressionMap = new HANHashMap<>(arguments.size());
         for (int i = 0; i < arguments.size(); i++) {
             Expression argument = arguments.get(i);
             String parameter = declaration.parameters.get(i);
@@ -137,8 +139,8 @@ public class Checker {
     }
 
     private void checkBodyStatements(BodyStatement body) {
-        variableTypes.addFirst(new HashMap<>());
-        functions.addFirst(new HashMap<>());
+        variableTypes.addFirst(new HANHashMap<>());
+        functions.addFirst(new HANHashMap<>());
 
         for (ASTNode child : body.getChildren()) {
             if (child instanceof FunctionDeclaration declaration) {
@@ -162,7 +164,7 @@ public class Checker {
                     continue;
                 }
 
-                HashMap<String, ExpressionType> scopedVars = variableTypes.getFirst();
+                IHANHashMap<String, ExpressionType> scopedVars = variableTypes.getFirst();
                 scopedVars.put(name, type.value());
 
                 continue;
@@ -230,8 +232,8 @@ public class Checker {
         functions.removeFirst();
     }
 
-    public static <T> Optional<T> getValueFromStack(IHANLinkedList<HashMap<String, T>> stack, String name) {
-        for (HashMap<String, T> map : stack) {
+    public static <T> Optional<T> getValueFromStack(IHANLinkedList<IHANHashMap<String, T>> stack, String name) {
+        for (IHANHashMap<String, T> map : stack) {
             if (map.containsKey(name)) {
                 return Optional.of(map.get(name));
             }
@@ -240,12 +242,12 @@ public class Checker {
         return Optional.empty();
     }
 
-    public static <T> void popVariablesOffStack(IHANLinkedList<HashMap<String, T>> variables, BodyStatement parent) {
+    public static <T> void popVariablesOffStack(IHANLinkedList<IHANHashMap<String, T>> variables, BodyStatement parent) {
         if (parent instanceof IfClause) { // only place variables in higher stacks if the variable was used within a if clause
-            HashMap<String, T> lastOnStack = variables.getFirst();
+            IHANHashMap<String, T> lastOnStack = variables.getFirst();
             variables.removeFirst();
-            for (HashMap<String, T> newLastOnStack : variables) {
-                for (Map.Entry<String, T> entry : lastOnStack.entrySet()) {
+            for (IHANHashMap<String, T> newLastOnStack : variables) {
+                for (Map.Entry<String, T> entry : lastOnStack) {
                     newLastOnStack.computeIfPresent(entry.getKey(),
                             (key, value) -> entry.getValue()
                     );
