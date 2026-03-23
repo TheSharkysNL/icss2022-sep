@@ -82,7 +82,7 @@ public abstract class Operation extends Expression {
 
         Result<ExpressionType, SemanticError> rhsResult = rhs.getExpressionType(checker);
         if (rhsResult.isError()) {
-            return mapper.apply(lhsResult);
+            return mapper.apply(rhsResult);
         }
 
         return function.apply(lhsResult.value(), rhsResult.value());

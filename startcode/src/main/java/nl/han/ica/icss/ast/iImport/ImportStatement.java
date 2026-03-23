@@ -96,48 +96,18 @@ public class ImportStatement extends ASTNode {
         }
     }
 
-    public Result<HashMap<String, FunctionDeclaration>, SemanticError> validateAndGetImportedFunctions(File file, Checker checker) {
-        HashMap<String, FunctionDeclaration> importedFunctions = new HashMap<>();
-
-        for (ImportType importType : importTypes) {
-            if (importType instanceof ImportType.Functions(List<ImportItem> items)) {
-                Result<AST, SemanticError> syntaxTree = getImportedSyntaxTree(file);
-                if (syntaxTree.isError()) {
-                    return new Result.Error<>(syntaxTree.error());
-                }
-
-                boolean hasWildCard = items
-                        .stream()
-                        .anyMatch(f -> f.type instanceof ImportItem.ImportItemType.WildCard);
-
-                Set<String> neededFunctions = items
-                        .stream()
-                        .filter(f -> f.type instanceof ImportItem.ImportItemType.Named)
-                        .map(f -> ((ImportItem.ImportItemType.Named)f.type).name())
-                        .collect(Collectors.toSet());
-
-                checker.check(syntaxTree.value());
-                List<SemanticError> errors = syntaxTree.value().getErrors();
-                if (!errors.isEmpty()) {
-                    return new Result.Error<>(new SemanticError("The semantics of the imported file at: '" + file.toPath().toAbsolutePath() + "' is invalid."));
-                }
-
-                for (ASTNode node : syntaxTree.value().root.body) {
-                    if (node instanceof FunctionDeclaration functionDeclaration) {
-                        boolean needsImport = neededFunctions.remove(functionDeclaration.name);
-                        if (hasWildCard || needsImport) {
-                            importedFunctions.put(functionDeclaration.name, functionDeclaration);
-                        }
-                    }
-                }
-
-                if (!neededFunctions.isEmpty()) {
-                    return new Result.Error<>(new SemanticError("Some functions where not found in import from file: '" + file.toPath().toAbsolutePath() + "'. The following functions were not found: " + String.join(", ", neededFunctions) + "."));
-                }
-            }
+    public Result<HashMap<String, FunctionDeclaration>, SemanticError> validateAndGetImportedFunctions(File file) {
+        Result<AST, SemanticError> syntaxTree = getImportedSyntaxTree(file);
+        if (syntaxTree.isError()) {
+            return new Result.Error<>(syntaxTree.error());
         }
 
-        return new Result.Success<>(importedFunctions);
+        HashMap<String, FunctionDeclaration> functions = new HashMap<>();
+        for (FunctionDeclaration functionDeclaration : getImportedFunctions()) {
+            functions.put(functionDeclaration.name, functionDeclaration);
+        }
+
+        return new Result.Success<>(functions);
     }
 
     public sealed interface ImportType {

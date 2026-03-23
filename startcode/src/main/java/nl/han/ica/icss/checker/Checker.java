@@ -8,6 +8,7 @@ import nl.han.ica.icss.Result;
 import nl.han.ica.icss.ast.*;
 import nl.han.ica.icss.ast.function.ExpressionReturnStatement;
 import nl.han.ica.icss.ast.function.FunctionDeclaration;
+import nl.han.ica.icss.ast.function.ImportedFunctionDeclaration;
 import nl.han.ica.icss.ast.function.StyleReturnStatement;
 import nl.han.ica.icss.ast.iImport.ImportStatement;
 import nl.han.ica.icss.ast.types.ExpressionType;
@@ -21,6 +22,7 @@ public class Checker {
 
     private final IHANLinkedList<IHANHashMap<String, ExpressionType>> variableTypes = new HANLinkedList<>();
     private final IHANLinkedList<IHANHashMap<String, FunctionDeclaration>> functions = new HANLinkedList<>();
+    private final IHANHashMap<String, IHANHashMap<String, ExpressionType>> importedVariableTypes = new HANHashMap<>();
 
     public void check(AST ast) {
         checkBodyStatements(ast.root);
@@ -52,11 +54,22 @@ public class Checker {
             parameterExpressionMap.put(parameter, result.value());
         }
 
+        if (declaration instanceof ImportedFunctionDeclaration importedFunctionDeclaration) {
+            String location = importedFunctionDeclaration.location;
+
+            IHANHashMap<String, ExpressionType> variables = importedVariableTypes.get(location);
+            variableTypes.addFirst(variables);
+        }
+
         variableTypes.addFirst(parameterExpressionMap);
 
         T result = function.apply(declaration);
 
         variableTypes.removeFirst();
+
+        if (declaration instanceof ImportedFunctionDeclaration) {
+            variableTypes.removeFirst();
+        }
 
         return result;
     }
@@ -232,7 +245,7 @@ public class Checker {
             return;
         }
 
-        Result<HashMap<String, FunctionDeclaration>, SemanticError> importedFunctions = importStatement.validateAndGetImportedFunctions(file, this);
+        Result<HashMap<String, FunctionDeclaration>, SemanticError> importedFunctions = importStatement.validateAndGetImportedFunctions(file);
         if (importedFunctions.isError()) {
             importStatement.setError(importedFunctions.error());
             return;
@@ -240,6 +253,14 @@ public class Checker {
 
         functions.getFirst()
                 .putAll(importedFunctions.value()); // add the imported functions
+
+        List<VariableAssignment> importedVariables = importStatement.getImportedVariables();
+        HANHashMap<String, ExpressionType> importedVariablesHashmap = new HANHashMap<>(importedVariables.size());
+        for (VariableAssignment variableAssignment : importedVariables) {
+            importedVariablesHashmap.put(variableAssignment.name.name, variableAssignment.expression.getExpressionType(this).value());
+        }
+
+        importedVariableTypes.put(importStatement.location, importedVariablesHashmap);
     }
 
     public static <T> Optional<T> getValueFromStack(IHANLinkedList<IHANHashMap<String, T>> stack, String name) {

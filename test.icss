@@ -1,5 +1,9 @@
 Variable := 100;
 
+a {
+    width: 10000px;
+}
+
 fn Test [] {
     return Variable;
 }
