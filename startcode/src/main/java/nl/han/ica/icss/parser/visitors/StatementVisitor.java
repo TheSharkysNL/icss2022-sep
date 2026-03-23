@@ -48,7 +48,7 @@ public class StatementVisitor extends ICSSBaseVisitor<ASTNode> {
                 .map(stmt -> stmt.accept(this))
                 .toList();
 
-        ElseClause elseClause;
+        ElseClause elseClause = null;
         if (ifStmt.elseStatement() != null) {
             List<ASTNode> elseBody = ifStmt.elseStatement().statement()
                     .stream()
@@ -56,8 +56,6 @@ public class StatementVisitor extends ICSSBaseVisitor<ASTNode> {
                     .toList();
 
             elseClause = new ElseClause(elseBody);
-        } else {
-            elseClause = new ElseClause(new ArrayList<>());
         }
 
         return new IfClause(expression, body, elseClause);

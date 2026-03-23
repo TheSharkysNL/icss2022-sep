@@ -213,6 +213,9 @@ public class Evaluator implements Transform {
 
             return new Result.Success<>(newIfBody.value());
         } else {
+            if (ifClause.elseClause == null) {
+                return new Result.Success<>(new ArrayList<>());
+            }
             Result<List<ASTNode>, EvaluationError> newElseBody = evaluateBody(ifClause.elseClause, isInFunction);
             if (newElseBody.isError()) {
                 return newElseBody;

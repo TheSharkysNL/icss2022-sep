@@ -24,6 +24,10 @@ STYLES: 'styles';
 STRING: '"' .*? '"';
 AND: 'and';
 
+// switch support
+CASE: 'case';
+ARROW: '->';
+
 //Literals
 TRUE: 'TRUE';
 FALSE: 'FALSE';
@@ -92,6 +96,11 @@ importItems: OPEN_BRACE importList CLOSE_BRACE;
 importType: FUNCTIONS importItems? #functionsImportType | STYLES #stylesImportType | MUL #bothImportType;
 importTypeList: importType | importTypeList AND importType;
 iImport: FROM STRING IMPORT importTypeList SEMICOLON;
+
+// switch
+switchCase: expressionLit ARROW expression;
+switchCaseList: switchCase | switchCaseList COMMA switchCase;
+switch: CASE BOX_BRACKET_OPEN expression BOX_BRACKET_CLOSE OPEN_BRACE switchCaseList CLOSE_BRACE;
 
 expressionLit
     : COLOR           #colorLiteral

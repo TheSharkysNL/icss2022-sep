@@ -34,7 +34,6 @@ public class IdSelector extends Selector {
 
     @Override
     public void addGeneratedCss(StringBuilder builder) {
-        builder.append('#');
         builder.append(id);
     }
 }

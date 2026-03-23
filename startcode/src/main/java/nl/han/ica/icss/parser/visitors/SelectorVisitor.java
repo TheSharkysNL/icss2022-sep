@@ -10,7 +10,7 @@ import nl.han.ica.icss.parser.ICSSParser;
 public class SelectorVisitor extends ICSSBaseVisitor<Selector> {
     @Override
     public Selector visitIdSelector(ICSSParser.IdSelectorContext selector) {
-        String id = selector.ID_IDENT().getText().substring(1); // remove '#'
+        String id = selector.ID_IDENT().getText();
         return new IdSelector(id);
     }
 
@@ -22,7 +22,7 @@ public class SelectorVisitor extends ICSSBaseVisitor<Selector> {
 
     @Override
     public Selector visitClassSelector(ICSSParser.ClassSelectorContext selector) {
-        String cls = selector.CLASS_IDENT().getText().substring(1); // remove '.'
+        String cls = selector.CLASS_IDENT().getText();
         return new ClassSelector(cls);
     }
 }

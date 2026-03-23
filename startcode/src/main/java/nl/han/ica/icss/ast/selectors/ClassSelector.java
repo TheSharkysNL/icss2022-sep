@@ -35,7 +35,6 @@ public class ClassSelector extends Selector {
 
     @Override
     public void addGeneratedCss(StringBuilder builder) {
-        builder.append('.');
         builder.append(cls);
     }
 }
