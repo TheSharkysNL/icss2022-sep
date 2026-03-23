@@ -4,10 +4,7 @@ import nl.han.ica.datastructures.HANLinkedList;
 import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.icss.Result;
 import nl.han.ica.icss.ast.*;
-import nl.han.ica.icss.ast.function.ExpressionReturnStatement;
-import nl.han.ica.icss.ast.function.FunctionCall;
-import nl.han.ica.icss.ast.function.FunctionDeclaration;
-import nl.han.ica.icss.ast.function.StyleReturnStatement;
+import nl.han.ica.icss.ast.function.*;
 import nl.han.ica.icss.ast.iImport.ImportStatement;
 import nl.han.ica.icss.ast.literals.BoolLiteral;
 import nl.han.ica.icss.checker.Checker;
@@ -23,10 +20,12 @@ public class Evaluator implements Transform {
 
     private final IHANLinkedList<HashMap<String, Literal>> variableValues;
     private final IHANLinkedList<HashMap<String, FunctionDeclaration>> functions;
+    private final HashMap<String, HashMap<String, Literal>> importedVariableValues;
 
     public Evaluator() {
         functions = new HANLinkedList<>();
         variableValues = new HANLinkedList<>();
+        importedVariableValues = new HashMap<>();
     }
 
     public Optional<Literal> getVariable(String name) {
@@ -66,9 +65,21 @@ public class Evaluator implements Transform {
             functionVariables.put(parameter, result.value());
         }
 
+        if (functionDeclaration instanceof ImportedFunctionDeclaration importedFunctionDeclaration) {
+            String location = importedFunctionDeclaration.location;
+
+            HashMap<String, Literal> variables = importedVariableValues.get(location);
+            variableValues.addFirst(variables);
+        }
+
         variableValues.addFirst(functionVariables);
         Result<List<ASTNode>, EvaluationError> result = evaluateBody(functionDeclaration, true);
         variableValues.removeFirst();
+
+        if (functionDeclaration instanceof ImportedFunctionDeclaration) {
+            variableValues.removeFirst();
+        }
+
         return result;
     }
 
@@ -168,6 +179,7 @@ public class Evaluator implements Transform {
             if (child instanceof FunctionDeclaration functionDeclaration) {
                 functions.getFirst()
                         .put(functionDeclaration.name, functionDeclaration);
+                newBody.add(functionDeclaration);
                 continue; // Skip for now as the function will be evaluated later at a function call expression.
             }
 
@@ -177,22 +189,18 @@ public class Evaluator implements Transform {
                 }
                 importStatement.isImported = true; // so that a function call doesn't evaluate imports more than once
 
-                Result<AST, SemanticError> importedAst = importStatement.getImportedSyntaxTree();
-                if (importedAst.isError()) {
-                    return new Result.Error<>(new EvaluationError(importedAst.error().toString()));
+                newBody.addAll(importStatement.getImportedStyleRules());
+                for (FunctionDeclaration functionDeclaration : importStatement.getImportedFunctions()) {
+                    functions.getFirst()
+                            .put(functionDeclaration.name, functionDeclaration);
                 }
+                HashMap<String, Literal> importedVariables = new HashMap<>(importStatement.getImportedVariables().size());
+                for (VariableAssignment variableAssignment : importStatement.getImportedVariables()) {
+                    // expression here should already be a literal as it should be evaluated by the import statement
+                    importedVariables.put(variableAssignment.name.name, (Literal)variableAssignment.expression);
+                }
+                importedVariableValues.put(importStatement.location, importedVariables);
 
-                // add the nodes at the next position so that when it loops around
-                // it will evaluate the nodes within the imported syntax.
-                body.body = Stream.concat( // use concat here as list will most likely be immutable
-                                Stream.concat(
-                                        body.body.subList(0, i).stream(),
-                                        importedAst.value().root.body.stream()
-                                ),
-                                body.body.subList(i + 1, body.body.size() - i).stream()
-                        )
-                        .toList();
-                i--; // because the import statement is removed
                 continue;
             }
 
@@ -240,7 +248,7 @@ public class Evaluator implements Transform {
         if (node instanceof VariableAssignment variableAssignment) {
             return evaluateVariableAssignment(variableAssignment)
                     .map(error -> (Result<Optional<ASTNode>, EvaluationError>)new Result.Error<Optional<ASTNode>, EvaluationError>(error))
-                    .orElse(new Result.Success<>(Optional.empty()));
+                    .orElse(new Result.Success<>(Optional.of(new VariableAssignment(variableAssignment.name, variableAssignment.expression.tryEvaluate(this).value()))));
         } else if (node instanceof Declaration declaration) {
             Expression expression = declaration.expression;
 

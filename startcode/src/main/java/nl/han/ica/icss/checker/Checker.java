@@ -244,12 +244,11 @@ public class Checker {
         if (parent instanceof IfClause) { // only place variables in higher stacks if the variable was used within a if clause
             HashMap<String, T> lastOnStack = variables.getFirst();
             variables.removeFirst();
-            HashMap<String, T> newLastOnStack = variables.getFirst();
-            if (newLastOnStack != null) {
+            for (HashMap<String, T> newLastOnStack : variables) {
                 for (Map.Entry<String, T> entry : lastOnStack.entrySet()) {
-                    if (newLastOnStack.containsKey(entry.getKey())) { // if variable exists in a higher stack then replace its value
-                        newLastOnStack.put(entry.getKey(), entry.getValue());
-                    }
+                    newLastOnStack.computeIfPresent(entry.getKey(),
+                            (key, value) -> entry.getValue()
+                    );
                 }
             }
         } else {

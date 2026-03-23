@@ -2,11 +2,9 @@ package nl.han.ica.icss.ast.iImport;
 
 import nl.han.ica.icss.Pipeline;
 import nl.han.ica.icss.Result;
-import nl.han.ica.icss.ast.AST;
-import nl.han.ica.icss.ast.ASTNode;
-import nl.han.ica.icss.ast.Stylerule;
-import nl.han.ica.icss.ast.Stylesheet;
+import nl.han.ica.icss.ast.*;
 import nl.han.ica.icss.ast.function.FunctionDeclaration;
+import nl.han.ica.icss.ast.function.ImportedFunctionDeclaration;
 import nl.han.ica.icss.checker.Checker;
 import nl.han.ica.icss.checker.SemanticError;
 
@@ -22,22 +20,16 @@ public class ImportStatement extends ASTNode {
 
     public boolean isImported;
 
-    private AST importedSyntaxTree = null;
+    private final List<FunctionDeclaration> importedFunctions = new ArrayList<>();
+    private final List<Stylerule> importedStyleRules = new ArrayList<>();
+    private final List<VariableAssignment> importedVariables = new ArrayList<>();
 
     public ImportStatement(String location, List<ImportType> importTypes) {
         this.location = location;
         this.importTypes = importTypes;
     }
 
-    public Result<AST, SemanticError> getImportedSyntaxTree() {
-        if (importedSyntaxTree != null) {
-            return new Result.Success<>(importedSyntaxTree);
-        }
-
-        return getImportedSyntaxTree(new File(location));
-    }
-
-    private AST getOnlyNeededImports(AST ast) {
+    private void setImportedValues(AST ast) {
         HashSet<String> neededFunctions = new HashSet<>();
         boolean includeStyles = false;
         boolean useWildcardForFunctions = false;
@@ -58,31 +50,46 @@ public class ImportStatement extends ASTNode {
             }
         }
 
-        ArrayList<ASTNode> newNodes = new ArrayList<>();
         for (ASTNode node : ast.root.body) {
             if (node instanceof FunctionDeclaration functionDeclaration && (useWildcardForFunctions || neededFunctions.contains(functionDeclaration.name))) {
-                newNodes.add(node);
+                importedFunctions.add(new ImportedFunctionDeclaration(location, functionDeclaration.name, functionDeclaration.parameters, functionDeclaration.body));
             } else if (node instanceof Stylerule stylerule && includeStyles) {
-                newNodes.add(stylerule);
+                importedStyleRules.add(stylerule);
+            } else if (node instanceof VariableAssignment variableAssignment) {
+                importedVariables.add(variableAssignment);
             }
         }
+    }
 
-        return new AST(new Stylesheet(newNodes));
+    public List<FunctionDeclaration> getImportedFunctions() {
+        return importedFunctions;
+    }
+
+    public List<Stylerule> getImportedStyleRules() {
+        return importedStyleRules;
+    }
+
+    public List<VariableAssignment> getImportedVariables() {
+        return importedVariables;
     }
 
     private Result<AST, SemanticError> getImportedSyntaxTree(File file) {
-        if (importedSyntaxTree != null) { // reuse syntax tree here as it should never change.
-            return new Result.Success<>(importedSyntaxTree);
-        }
-
         try {
             String fileString = Files.readString(file.toPath());
 
             Pipeline pipeline = new Pipeline();
             pipeline.parseString(fileString);
+            pipeline.check();
+            if (!pipeline.getErrors().isEmpty()) {
+                String errorString = String.join(", ", pipeline.getErrors());
 
-            importedSyntaxTree = getOnlyNeededImports(pipeline.getAST());
-            return new Result.Success<>(importedSyntaxTree);
+                return new Result.Error<>(new SemanticError("Errors occurred while trying to parse the imported file at: '" + file.toPath().toAbsolutePath() + "'. The following errors occurred: " + errorString));
+            }
+
+            pipeline.transform();
+
+            setImportedValues(pipeline.getAST());
+            return new Result.Success<>(pipeline.getAST());
         } catch (IOException e) {
             return new Result.Error<>(new SemanticError("Could not read the file at: '" + file.toPath().toAbsolutePath() + "'. The error that occurred: " + e.getMessage()));
         }

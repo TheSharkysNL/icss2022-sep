@@ -1,3 +1,5 @@
+Variable := 100;
+
 fn Test [] {
-    return 100;
+    return Variable;
 }
