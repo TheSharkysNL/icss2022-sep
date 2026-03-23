@@ -51,7 +51,7 @@ public class NegateOperation extends Expression {
 
     @Override
     public Result<ExpressionType, SemanticError> getExpressionType(Checker checker) {
-        return new Result.Success<>(ExpressionType.BOOL); // negate always returns a boolean
+        return Result.of(ExpressionType.BOOL); // negate always returns a boolean
     }
 
     @Override

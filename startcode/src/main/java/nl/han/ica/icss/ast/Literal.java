@@ -15,32 +15,32 @@ import java.util.Optional;
 
 public abstract class Literal extends Expression {
     public Result<Literal, EvaluationError> add(Literal rhs) {
-        return new Result.Error<>(new InvalidOperation(this, rhs, "add"));
+        return Result.err(new InvalidOperation(this, rhs, "add"));
     }
     public Result<Literal, EvaluationError> sub(Literal rhs){
-        return new Result.Error<>(new InvalidOperation(this, rhs, "sub"));
+        return Result.err(new InvalidOperation(this, rhs, "sub"));
     }
     public Result<Literal, EvaluationError> mul(Literal rhs) {
-        return new Result.Error<>(new InvalidOperation(this, rhs, "mul"));
+        return Result.err(new InvalidOperation(this, rhs, "mul"));
     }
     public Result<Literal, EvaluationError> compare(Literal rhs, EqualityOperation.EqualityOperationType operation) {
-        return new Result.Error<>(new InvalidOperation(this, rhs, operation.name()));
+        return Result.err(new InvalidOperation(this, rhs, operation.name()));
     }
 
     public Result<Literal, EvaluationError> negate() {
-        return new Result.Error<>(new InvalidOperation(this, null, "negate"));
+        return Result.err(new InvalidOperation(this, null, "negate"));
     }
 
     protected abstract ExpressionType getExpressionType();
 
     @Override
     public Result<Literal, EvaluationError> tryEvaluate(Evaluator evaluator) {
-        return new Result.Success<>(this);
+        return Result.of(this);
     }
 
     @Override
     public Result<ExpressionType, SemanticError> getExpressionType(Checker checker) {
-        return new Result.Success<>(getExpressionType());
+        return Result.of(getExpressionType());
     }
 
     @Override

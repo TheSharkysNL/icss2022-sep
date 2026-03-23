@@ -1,12 +1,12 @@
 package nl.han.ica.icss.parser.visitors;
 
 import nl.han.ica.icss.ast.Expression;
-import nl.han.ica.icss.ast.literals.BoolLiteral;
-import nl.han.ica.icss.ast.literals.ColorLiteral;
-import nl.han.ica.icss.ast.literals.PixelLiteral;
-import nl.han.ica.icss.ast.literals.ScalarLiteral;
+import nl.han.ica.icss.ast.Literal;
+import nl.han.ica.icss.ast.literals.*;
 import nl.han.ica.icss.parser.ICSSBaseVisitor;
 import nl.han.ica.icss.parser.ICSSParser;
+
+import java.util.List;
 
 public class ExpressionLiteralVisitor extends ICSSBaseVisitor<Expression> {
     @Override
@@ -40,5 +40,16 @@ public class ExpressionLiteralVisitor extends ICSSBaseVisitor<Expression> {
     public final Expression visitScalarLiteral(ICSSParser.ScalarLiteralContext ctx) {
         int integerValue = Integer.parseInt(ctx.SCALAR().getText());
         return new ScalarLiteral(integerValue);
+    }
+
+    @Override
+    public final Expression visitTupleLiteral(ICSSParser.TupleLiteralContext ctx) {
+        List<Literal> literals = StatementVisitor.getList(
+                ctx.expressionLitList(),
+                ICSSParser.ExpressionLitListContext::expressionLitList,
+                e -> (Literal)e.expressionLit().accept(this)
+        );
+
+        return new TupleLiteral(literals);
     }
 }

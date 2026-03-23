@@ -29,12 +29,12 @@ public class FunctionCall extends Expression {
     private <T> T evaluateFunctionCall(Evaluator evaluator, Function<ReturnStatement, T> function, Function<Result<List<ASTNode>, EvaluationError>, T> mapper) {
         Optional<FunctionDeclaration> func = evaluator.getFunction(name);
         if (func.isEmpty()) {
-            return mapper.apply(new Result.Error<>(new FunctionNotFound(name)));
+            return mapper.apply(Result.err(new FunctionNotFound(name)));
         }
 
         Result<List<ASTNode>, EvaluationError> result = evaluator.evaluateFunction(func.get(), arguments);
         if (result.isError()) {
-            return mapper.apply(new Result.Error<>(result.error()));
+            return mapper.apply(Result.err(result.error()));
         }
 
         for (ASTNode node : result.value()) {
@@ -43,7 +43,7 @@ public class FunctionCall extends Expression {
             }
         }
 
-        return mapper.apply(new Result.Error<>(new InvalidFunctionReturnType("void")));
+        return mapper.apply(Result.err(new InvalidFunctionReturnType("void")));
     }
 
     @Override
@@ -53,8 +53,8 @@ public class FunctionCall extends Expression {
                 return expression.expression.tryEvaluate(evaluator);
             }
 
-            return new Result.Error<>(new InvalidFunctionReturnType("style"));
-        }, result -> new Result.Error<>(result.error()));
+            return Result.err(new InvalidFunctionReturnType("style"));
+        }, result -> Result.err(result.error()));
     }
 
     public Optional<Stylerule> evaluateStyle(Evaluator evaluator) {
@@ -81,7 +81,7 @@ public class FunctionCall extends Expression {
     public Result<ExpressionType, SemanticError> getExpressionType(Checker checker) {
         Optional<FunctionDeclaration> functionDeclaration = checker.getFunction(name);
         if (functionDeclaration.isEmpty()) {
-            return new Result.Error<>(new SemanticError("Could not find the function: '" + name + "'."));
+            return Result.err(new SemanticError("Could not find the function: '" + name + "'."));
         }
 
         return checker.getFunctionCallExpressionType(functionDeclaration.get(), arguments);

@@ -56,13 +56,13 @@ public abstract class NumericLiteral extends Literal {
         int selfNumeric = getNumericValue();
         Literal afterOperation = new BoolLiteral(operation.evaluate(selfNumeric, rhsNumeric));
 
-        return new Result.Success<>(afterOperation);
+        return Result.of(afterOperation);
     }
 
     @Override
     public Result<Literal, EvaluationError> negate() {
         int selfNumeric = getNumericValue();
 
-        return new Result.Success<>(fromNumericValue(~selfNumeric));
+        return Result.of(fromNumericValue(~selfNumeric));
     }
 }

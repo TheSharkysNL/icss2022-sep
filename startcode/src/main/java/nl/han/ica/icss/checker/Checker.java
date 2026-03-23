@@ -11,6 +11,7 @@ import nl.han.ica.icss.ast.function.FunctionDeclaration;
 import nl.han.ica.icss.ast.function.ImportedFunctionDeclaration;
 import nl.han.ica.icss.ast.function.StyleReturnStatement;
 import nl.han.ica.icss.ast.iImport.ImportStatement;
+import nl.han.ica.icss.ast.iSwitch.SwitchStatement;
 import nl.han.ica.icss.ast.types.ExpressionType;
 
 import java.io.File;
@@ -81,13 +82,13 @@ public class Checker {
             if (node instanceof ExpressionReturnStatement returnStatement) {
                 Result<ExpressionType, SemanticError> result = returnStatement.expression.getExpressionType(this);
                 if (result.isError()) {
-                    return new Result.Error<>(result.error());
+                    return Result.err(result.error());
                 }
-                return new Result.Success<>(Optional.of(result.value()));
+                return Result.of(Optional.of(result.value()));
             }
 
             if (node instanceof StyleReturnStatement) {
-                return new Result.Success<>(Optional.of(ExpressionType.UNDEFINED));
+                return Result.of(Optional.of(ExpressionType.UNDEFINED));
             }
 
             if (node instanceof BodyStatement innerBody) {
@@ -101,14 +102,14 @@ public class Checker {
                         expressionType = result.value();
                     } else {
                         if (result.value().get() != expressionType.get()) {
-                            return new Result.Error<>(new SemanticError("Function returns multiple data types."));
+                            return Result.err(new SemanticError("Function returns multiple data types."));
                         }
                     }
                 }
             }
         }
 
-        return new Result.Success<>(Optional.empty());
+        return Result.of(Optional.empty());
     }
 
     public Result<ExpressionType, SemanticError> getFunctionCallExpressionType(FunctionDeclaration functionDeclaration, List<Expression> arguments) {
@@ -118,14 +119,14 @@ public class Checker {
             Result<Optional<ExpressionType>, SemanticError> result = tryGetReturnValue(declaration);
 
             if (result.isError()) {
-                return new Result.Error<>(result.error());
+                return Result.err(result.error());
             }
 
             if (result.value().isPresent()) {
-                return new Result.Success<>(result.value().get());
+                return Result.of(result.value().get());
             }
 
-            return new Result.Error<>(new SemanticError("Expression invalid as function returns 'void'."));
+            return Result.err(new SemanticError("Expression invalid as function returns 'void'."));
         }, Result.Error::new);
     }
 

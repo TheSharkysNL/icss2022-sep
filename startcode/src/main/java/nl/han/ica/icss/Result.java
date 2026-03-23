@@ -53,4 +53,12 @@ public sealed interface Result<T, E> {
     T value();
 
     Optional<E> ok();
+
+    static <T, E> Result<T, E> of(T value) {
+        return new Success<>(value);
+    }
+
+    static <T, E> Result<T, E> err(E error) {
+        return new Error<>(error);
+    }
 }

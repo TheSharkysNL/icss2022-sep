@@ -40,10 +40,10 @@ public class VariableReference extends Expression {
 	public Result<Literal, EvaluationError> tryEvaluate(Evaluator evaluator) {
 	 	Optional<Literal> value = evaluator.getVariable(name);
 		if (value.isPresent()) {
-		 return new Result.Success<>(value.get());
+		 return Result.of(value.get());
 		}
 
-		return new Result.Error<>(new VariableNotFound(name));
+		return Result.err(new VariableNotFound(name));
 	}
 
 	@Override
@@ -61,9 +61,9 @@ public class VariableReference extends Expression {
 	public Result<ExpressionType, SemanticError> getExpressionType(Checker checker) {
 		Optional<ExpressionType> expressionType = checker.getVariable(name);
 		if (expressionType.isPresent()) {
-			return new Result.Success<>(expressionType.get());
+			return Result.of(expressionType.get());
 		}
 
-		return new Result.Error<>(new SemanticError("Variable not found: \"" + name + "\""));
+		return Result.err(new SemanticError("Variable not found: \"" + name + "\""));
 	}
 }

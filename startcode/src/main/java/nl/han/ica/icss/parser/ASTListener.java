@@ -38,12 +38,6 @@ public class ASTListener extends ICSSBaseListener {
 
 	@Override
 	public void enterStylesheet(ICSSParser.StylesheetContext stylesheet) {
-		StatementVisitor visitor = new StatementVisitor();
-
-        styleSheet.body = stylesheet.statement()
-                .stream()
-                .map(statement -> statement
-                        .accept(visitor))
-                .toList();
+        styleSheet.body = StatementVisitor.getStatements(stylesheet.statement());
 	}
 }

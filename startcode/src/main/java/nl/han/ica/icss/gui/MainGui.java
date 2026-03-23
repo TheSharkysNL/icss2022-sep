@@ -30,7 +30,7 @@ public class MainGui extends Application {
 
     private final static String title = "ICSS Tool September 2020, version 1";
     //Example files (for menu)
-    private final static List<String> examples = Arrays.asList("level0.icss","level1.icss","level2.icss","level3.icss", "functionCall.icss", "equality.icss", "for.icss", "import.icss");
+    private final static List<String> examples = Arrays.asList("level0.icss","level1.icss","level2.icss","level3.icss", "functionCall.icss", "equality.icss", "for.icss", "import.icss", "switch.icss");
 
     //UI Components
     private InputPane inputPane;

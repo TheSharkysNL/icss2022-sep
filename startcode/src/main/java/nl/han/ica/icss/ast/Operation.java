@@ -60,11 +60,11 @@ public abstract class Operation extends Expression {
             case Tuple(Result.Success(Literal lhsValue), Result.Success(Literal rhsValue)) ->
                     applyOperation(lhsValue, rhsValue);
             case Tuple(Result.Error(EvaluationError error), Result.Success(Literal ignored)) ->
-                    new Result.Error<>(error);
+                    Result.err(error);
             case Tuple(Result.Success(Literal ignored), Result.Error(EvaluationError error)) ->
-                    new Result.Error<>(error);
+                    Result.err(error);
             case Tuple(Result.Error(EvaluationError error), Result.Error(EvaluationError ignored)) ->
-                    new Result.Error<>(error); // currently always returning left hand side error
+                    Result.err(error); // currently always returning left hand side error
         };
     }
 
@@ -90,7 +90,7 @@ public abstract class Operation extends Expression {
 
     @Override
     public Result<ExpressionType, SemanticError> getExpressionType(Checker checker) {
-        return withExpressionType(checker, (lhs, rhs) -> new Result.Success<>(switch (new Tuple<>(lhs, rhs)) {
+        return withExpressionType(checker, (lhs, rhs) -> Result.of(switch (new Tuple<>(lhs, rhs)) {
             case Tuple(ExpressionType first, ExpressionType second) when first == ExpressionType.SCALAR -> second;
             case Tuple(ExpressionType first, ExpressionType second) when second == ExpressionType.SCALAR -> first;
             case Tuple(ExpressionType first, ExpressionType ignored) -> first;

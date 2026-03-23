@@ -61,4 +61,9 @@ public class ExpressionVisitor extends PrefixExpressionVisitor {
         return ctx.comparisonExpression()
                 .accept(this);
     }
+
+    @Override
+    public final Expression visitSwitch(ICSSParser.SwitchContext ctx) {
+        return (Expression) ctx.accept(new StatementVisitor());
+    }
 }

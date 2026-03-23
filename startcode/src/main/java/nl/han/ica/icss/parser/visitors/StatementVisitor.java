@@ -1,15 +1,19 @@
 package nl.han.ica.icss.parser.visitors;
 
+import nl.han.ica.icss.Tuple;
 import nl.han.ica.icss.ast.*;
 import nl.han.ica.icss.ast.function.FunctionDeclaration;
 import nl.han.ica.icss.ast.iImport.ImportItem;
 import nl.han.ica.icss.ast.iImport.ImportStatement;
+import nl.han.ica.icss.ast.iSwitch.SwitchCase;
+import nl.han.ica.icss.ast.iSwitch.SwitchStatement;
 import nl.han.ica.icss.parser.ICSSBaseVisitor;
 import nl.han.ica.icss.parser.ICSSParser;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.function.Function;
 
@@ -21,10 +25,7 @@ public class StatementVisitor extends ICSSBaseVisitor<ASTNode> {
                 .map(selector -> selector.accept(new SelectorVisitor()))
                 .toList();
 
-        List<ASTNode> statements = ctx.statement()
-                .stream()
-                .map(statement -> statement.accept(this))
-                .toList();
+        List<ASTNode> statements = StatementVisitor.getStatements(ctx.statement());
 
         return new Stylerule(selectors, statements);
     }
@@ -43,17 +44,11 @@ public class StatementVisitor extends ICSSBaseVisitor<ASTNode> {
         Expression expression = ifStmt.expression()
                 .accept(new ExpressionVisitor());
 
-        List<ASTNode> body = ifStmt.statement()
-                .stream()
-                .map(stmt -> stmt.accept(this))
-                .toList();
+        List<ASTNode> body = StatementVisitor.getStatements(ifStmt.statement());
 
         ElseClause elseClause = null;
         if (ifStmt.elseStatement() != null) {
-            List<ASTNode> elseBody = ifStmt.elseStatement().statement()
-                    .stream()
-                    .map(stmt -> stmt.accept(this))
-                    .toList();
+            List<ASTNode> elseBody = StatementVisitor.getStatements(ifStmt.elseStatement().statement());
 
             elseClause = new ElseClause(elseBody);
         }
@@ -87,10 +82,7 @@ public class StatementVisitor extends ICSSBaseVisitor<ASTNode> {
                 p -> p.parameter().CAPITAL_IDENT().getText()
         );
 
-        List<ASTNode> body = ctx.statement()
-                .stream()
-                .map(stmt -> stmt.accept(this))
-                .toList();
+        List<ASTNode> body = StatementVisitor.getStatements(ctx.statement());
 
         return new FunctionDeclaration(name, parameters, body);
     }
@@ -119,11 +111,7 @@ public class StatementVisitor extends ICSSBaseVisitor<ASTNode> {
                 v -> (VariableAssignment)v.variableAssignment().accept(this)
         );
 
-        List<ASTNode> body = forContext
-                .statement()
-                .stream()
-                .map(stmt -> stmt.accept(this))
-                .toList();
+        List<ASTNode> body = StatementVisitor.getStatements(forContext.statement());
 
         return new ForStatement(initialVariableAssignments, loopExpression, loopVariableAssignments, body);
     }
@@ -142,6 +130,34 @@ public class StatementVisitor extends ICSSBaseVisitor<ASTNode> {
         return new ImportStatement(locationWithoutQuotes, importTypes);
     }
 
+    @Override
+    public ASTNode visitSwitch(ICSSParser.SwitchContext ctx) {
+        Expression expression = ctx.expression()
+                .accept(new ExpressionVisitor());
+
+        List<Tuple<Literal, SwitchCase>> casesList = getList(
+                ctx.switchCaseList(),
+                ICSSParser.SwitchCaseListContext::switchCaseList,
+                s -> {
+                    Literal literal = (Literal) s.switchCase().expressionLit()
+                            .accept(new ExpressionLiteralVisitor());
+
+                    SwitchCase switchCase = s.switchCase().switchCaseExpression()
+                            .accept(new SwitchCaseVisitor());
+
+                    return new Tuple<>(literal, switchCase);
+                }
+        );
+
+        HashMap<Literal, SwitchCase> cases = new HashMap<>();
+        for (Tuple<Literal, SwitchCase> switchCase : casesList) {
+            // TODO: do we need to check if a literal is specified multiple times?
+            cases.put(switchCase.first(), switchCase.second());
+        }
+
+        return new SwitchStatement(expression, cases);
+    }
+
     public static <TIn, TOut> List<TOut> getList(TIn in, Function<TIn, TIn> next, Function<TIn, TOut> output) {
         TIn current = in;
         ArrayList<TOut> out = new ArrayList<>();
@@ -154,6 +170,20 @@ public class StatementVisitor extends ICSSBaseVisitor<ASTNode> {
         }
 
         return out;
+    }
+
+    public static List<ASTNode> getStatements(List<ICSSParser.StatementContext> statements) {
+        ArrayList<ASTNode> stmts = new ArrayList<>(statements.size());
+        StatementVisitor visitor = new StatementVisitor();
+
+        for (int i = 0; i < statements.size(); i++) {
+            ASTNode statement = statements.get(i)
+                    .accept(visitor);
+
+            stmts.add(statement);
+        }
+
+        return stmts;
     }
 
     @Override

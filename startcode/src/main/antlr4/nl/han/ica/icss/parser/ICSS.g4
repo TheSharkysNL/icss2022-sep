@@ -35,7 +35,6 @@ PIXELSIZE: [0-9]+ 'px';
 PERCENTAGE: [0-9]+ '%';
 SCALAR: [0-9]+;
 
-
 //Color value takes precedence over id idents
 COLOR: '#' [0-9a-f] [0-9a-f] [0-9a-f] [0-9a-f] [0-9a-f] [0-9a-f];
 
@@ -68,6 +67,9 @@ EQ: '==';
 NE: '!=';
 NEGATE: '!';
 
+COMMENT: '//' ~( '\r' | '\n' )* -> skip;
+BLOCK_COMMENT: '/*' .*? '*/' -> skip;
+
 //--- PARSER: ---
 selector: LOWER_IDENT #tagSelector | ID_IDENT #idSelector | CLASS_IDENT #classSelector;
 
@@ -98,7 +100,8 @@ importTypeList: importType | importTypeList AND importType;
 iImport: FROM STRING IMPORT importTypeList SEMICOLON;
 
 // switch
-switchCase: expressionLit ARROW expression;
+switchCaseExpression: statement #singleStatementSwitchCase | OPEN_BRACE statement* CLOSE_BRACE #statementSwitchCase;
+switchCase: expressionLit ARROW switchCaseExpression;
 switchCaseList: switchCase | switchCaseList COMMA switchCase;
 switch: CASE BOX_BRACKET_OPEN expression BOX_BRACKET_CLOSE OPEN_BRACE switchCaseList CLOSE_BRACE;
 
@@ -109,8 +112,10 @@ expressionLit
     | SCALAR          #scalarLiteral
     | TRUE            #trueLiteral
     | FALSE           #falseLiteral
+    | BOX_BRACKET_OPEN expressionLitList BOX_BRACKET_CLOSE #tupleLiteral
     ;
-primaryExpression: CAPITAL_IDENT #variableIdent | expressionLit #expressionLiteral | (OPEN_BRACE expression CLOSE_BRACE) #braceExpression;
+expressionLitList: expressionLit | expressionLitList COMMA expressionLit;
+primaryExpression: CAPITAL_IDENT #variableIdent | expressionLit #expressionLiteral | (OPEN_BRACE expression CLOSE_BRACE) #braceExpression | BOX_BRACKET_OPEN expressionList BOX_BRACKET_CLOSE #tupleExpression;
 
 // function call
 expressionList: expression | expressionList COMMA expression;
@@ -138,9 +143,9 @@ comparisonExpression
     | comparisonExpression LT additiveExpression
     | comparisonExpression LE additiveExpression;
 
-expression: comparisonExpression;
+expression: comparisonExpression | switch;
 variableAssignment: CAPITAL_IDENT ASSIGNMENT_OPERATOR expression;
 
-statement: style | variableAssignment SEMICOLON | ifStatement | declaration | return | functionDeclaration | expression SEMICOLON | for | iImport;
+statement: style | variableAssignment SEMICOLON | ifStatement | declaration | return | functionDeclaration | expression SEMICOLON | for | iImport | switch;
 
 stylesheet: statement+|EOF;

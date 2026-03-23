@@ -78,7 +78,7 @@ public class EqualityOperation extends Operation {
 
     @Override
     public Result<ExpressionType, SemanticError> getExpressionType(Checker checker) {
-        return new Result.Success<>(ExpressionType.BOOL); // comparison always returns a boolean
+        return Result.of(ExpressionType.BOOL); // comparison always returns a boolean
     }
 
     @Override

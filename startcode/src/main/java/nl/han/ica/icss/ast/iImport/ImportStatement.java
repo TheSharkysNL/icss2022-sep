@@ -84,22 +84,22 @@ public class ImportStatement extends ASTNode {
             if (!pipeline.getErrors().isEmpty()) {
                 String errorString = String.join(", ", pipeline.getErrors());
 
-                return new Result.Error<>(new SemanticError("Errors occurred while trying to parse the imported file at: '" + file.toPath().toAbsolutePath() + "'. The following errors occurred: " + errorString));
+                return Result.err(new SemanticError("Errors occurred while trying to parse the imported file at: '" + file.toPath().toAbsolutePath() + "'. The following errors occurred: " + errorString));
             }
 
             pipeline.transform();
 
             setImportedValues(pipeline.getAST());
-            return new Result.Success<>(pipeline.getAST());
+            return Result.of(pipeline.getAST());
         } catch (IOException e) {
-            return new Result.Error<>(new SemanticError("Could not read the file at: '" + file.toPath().toAbsolutePath() + "'. The error that occurred: " + e.getMessage()));
+            return Result.err(new SemanticError("Could not read the file at: '" + file.toPath().toAbsolutePath() + "'. The error that occurred: " + e.getMessage()));
         }
     }
 
     public Result<HashMap<String, FunctionDeclaration>, SemanticError> validateAndGetImportedFunctions(File file) {
         Result<AST, SemanticError> syntaxTree = getImportedSyntaxTree(file);
         if (syntaxTree.isError()) {
-            return new Result.Error<>(syntaxTree.error());
+            return Result.err(syntaxTree.error());
         }
 
         HashMap<String, FunctionDeclaration> functions = new HashMap<>();
@@ -107,7 +107,7 @@ public class ImportStatement extends ASTNode {
             functions.put(functionDeclaration.name, functionDeclaration);
         }
 
-        return new Result.Success<>(functions);
+        return Result.of(functions);
     }
 
     public sealed interface ImportType {

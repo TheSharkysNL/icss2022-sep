@@ -9,6 +9,8 @@ import nl.han.ica.icss.TransformationConfig;
 import nl.han.ica.icss.ast.*;
 import nl.han.ica.icss.ast.function.*;
 import nl.han.ica.icss.ast.iImport.ImportStatement;
+import nl.han.ica.icss.ast.iSwitch.SwitchCase;
+import nl.han.ica.icss.ast.iSwitch.SwitchStatement;
 import nl.han.ica.icss.ast.literals.BoolLiteral;
 import nl.han.ica.icss.checker.Checker;
 import nl.han.ica.icss.checker.SemanticError;
@@ -57,7 +59,7 @@ public class Evaluator implements Transform {
 
     public Result<List<ASTNode>, EvaluationError> evaluateFunction(FunctionDeclaration functionDeclaration, List<Expression> arguments) {
         if (functionDeclaration.parameters.size() != arguments.size()) {
-            return new Result.Error<>(new InvalidArgumentCount(functionDeclaration.parameters.size(), arguments.size(), functionDeclaration.name));
+            return Result.err(new InvalidArgumentCount(functionDeclaration.parameters.size(), arguments.size(), functionDeclaration.name));
         }
 
         IHANHashMap<String, Literal> functionVariables = new HANHashMap<>(arguments.size());
@@ -67,7 +69,7 @@ public class Evaluator implements Transform {
 
             Result<Literal, EvaluationError> result = argument.tryEvaluate(this);
             if (result.isError()) {
-                return new Result.Error<>(result.error());
+                return Result.err(result.error());
             }
 
             functionVariables.put(parameter, result.value());
@@ -98,7 +100,7 @@ public class Evaluator implements Transform {
         for (VariableAssignment variableAssignment : forStatement.initialAssignments) { // evaluate all initial assignments
             Optional<EvaluationError> error = evaluateVariableAssignment(variableAssignment);
             if (error.isPresent()) {
-                return new Result.Error<>(error.get());
+                return Result.err(error.get());
             }
         }
 
@@ -106,11 +108,11 @@ public class Evaluator implements Transform {
             Result<Literal, EvaluationError> expressionEvaluation = forStatement.loopExpression.tryEvaluate(this);
 
             if (expressionEvaluation.isError()) {
-                return new Result.Error<>(expressionEvaluation.error());
+                return Result.err(expressionEvaluation.error());
             }
 
             if (!(expressionEvaluation.value() instanceof BoolLiteral bool)) {
-                return new Result.Error<>(new InvalidType(expressionEvaluation.value().getNodeLabel(), "BOOL"));
+                return Result.err(new InvalidType(expressionEvaluation.value().getNodeLabel(), "BOOL"));
             }
 
             if (!bool.value) { // check expression to see if the loop is at the end
@@ -127,13 +129,13 @@ public class Evaluator implements Transform {
             for (VariableAssignment loopVariableAssignments : forStatement.loopAssignments) { // update the variables for the loop
                 Optional<EvaluationError> error = evaluateVariableAssignment(loopVariableAssignments);
                 if (error.isPresent()) {
-                    return new Result.Error<>(error.get());
+                    return Result.err(error.get());
                 }
             }
         }
 
         variableValues.removeFirst();
-        return new Result.Success<>(newBody);
+        return Result.of(newBody);
     }
 
     private Result<List<ASTNode>, EvaluationError> evaluateBody(BodyStatement body, boolean isInFunction) {
@@ -152,7 +154,7 @@ public class Evaluator implements Transform {
                     continue;
                 }
                 case ForStatement forStatement -> {
-                    Result<List<ASTNode>, EvaluationError> result = evaluateForStatement(isInFunction, forStatement);
+                    Result<List<ASTNode>, EvaluationError> result = evaluateFor(forStatement, isInFunction);
                     if (result.isError()) return result;
 
                     newBody.addAll(result.value());
@@ -161,6 +163,13 @@ public class Evaluator implements Transform {
                 case FunctionDeclaration functionDeclaration -> {
                     evaluateFunction(functionDeclaration, newBody);
                     continue; // Skip for now as the function will be evaluated later at a function call expression.
+                }
+                case SwitchStatement switchStatement -> {
+                    Result<List<ASTNode>, EvaluationError> result = evaluateSwitchStatement(switchStatement, isInFunction);
+                    if (result.isError()) return result;
+
+                    newBody.addAll(result.value());
+                    continue;
                 }
                 case ImportStatement importStatement -> evaluateImport(importStatement, newBody);
                 case null, default -> {
@@ -180,7 +189,7 @@ public class Evaluator implements Transform {
 
             Result<Optional<ASTNode>, EvaluationError> evaluation = evaluate(child, isInFunction);
             if (evaluation.isError()) {
-                return new Result.Error<>(evaluation.error());
+                return Result.err(evaluation.error());
             }
             if (evaluation.value().isPresent()) {
                 newBody.add(evaluation.value().get());
@@ -190,18 +199,32 @@ public class Evaluator implements Transform {
         Checker.popVariablesOffStack(variableValues, body);
         functions.removeFirst();
 
-        return new Result.Success<>(newBody);
+        return Result.of(newBody);
+    }
+
+    private Result<List<ASTNode>, EvaluationError> evaluateSwitchStatement(SwitchStatement switchStatement, boolean isInFunction) {
+        Result<Literal, EvaluationError> switchResult = switchStatement.caseExpression.tryEvaluate(this);
+        if (switchResult.isError()) {
+            return Result.err(switchResult.error());
+        }
+
+        Optional<SwitchCase> switchCase = switchStatement.getCase(switchResult.value());
+        if (switchCase.isEmpty()) {
+            return Result.of(new ArrayList<>());
+        }
+
+        return evaluateBody(switchCase.get(), isInFunction);
     }
 
     private Result<List<ASTNode>, EvaluationError> evaluateIfStatement(boolean isInFunction, IfClause ifClause) {
         Result<Literal, EvaluationError> result = ifClause.conditionalExpression.tryEvaluate(this);
         if (result.isError()) {
-            return new Result.Error<>(result.error());
+            return Result.err(result.error());
         }
 
         Literal literal = result.value();
         if (!(literal instanceof BoolLiteral bool)) {
-            return new Result.Error<>(new InvalidType(literal.getNodeLabel(), "BOOL"));
+            return Result.err(new InvalidType(literal.getNodeLabel(), "BOOL"));
         }
 
 
@@ -211,27 +234,18 @@ public class Evaluator implements Transform {
                 return newIfBody;
             }
 
-            return new Result.Success<>(newIfBody.value());
+            return Result.of(newIfBody.value());
         } else {
             if (ifClause.elseClause == null) {
-                return new Result.Success<>(new ArrayList<>());
+                return Result.of(new ArrayList<>());
             }
             Result<List<ASTNode>, EvaluationError> newElseBody = evaluateBody(ifClause.elseClause, isInFunction);
             if (newElseBody.isError()) {
                 return newElseBody;
             }
 
-            return new Result.Success<>(newElseBody.value());
+            return Result.of(newElseBody.value());
         }
-    }
-
-    private Result<List<ASTNode>, EvaluationError> evaluateForStatement(boolean isInFunction, ForStatement forStatement) {
-        Result<List<ASTNode>, EvaluationError> result = evaluateFor(forStatement, isInFunction);
-        if (result.isError()) {
-            return result;
-        }
-
-        return new Result.Success<>(result.value());
     }
 
     private void evaluateFunction(FunctionDeclaration functionDeclaration, ArrayList<ASTNode> newBody) {
@@ -285,41 +299,41 @@ public class Evaluator implements Transform {
                         if (config.keepVariables()) {
                             returnedAssignment = Optional.of(new VariableAssignment(variableAssignment.name, variableAssignment.expression.tryEvaluate(this).value()));
                         }
-                        return new Result.Success<>(returnedAssignment);
+                        return Result.of(returnedAssignment);
                     });
         } else if (node instanceof Declaration declaration) {
             Expression expression = declaration.expression;
 
             Result<Literal, EvaluationError> literal = expression.tryEvaluate(this);
             if (literal.isError()) {
-                return new Result.Error<>(literal.error());
+                return Result.err(literal.error());
             }
 
-            return new Result.Success<>(Optional.of(new Declaration(declaration.property.name, literal.value())));
+            return Result.of(Optional.of(new Declaration(declaration.property.name, literal.value())));
         } else if (isInFunction && node instanceof ExpressionReturnStatement returnStatement) {
             Expression expression = returnStatement.expression;
 
             Result<Literal, EvaluationError> literal = expression.tryEvaluate(this);
             if (literal.isError()) {
-                return new Result.Error<>(literal.error());
+                return Result.err(literal.error());
             }
 
-            return new Result.Success<>(Optional.of(new ExpressionReturnStatement(literal.value())));
+            return Result.of(Optional.of(new ExpressionReturnStatement(literal.value())));
         } else if (isInFunction && node instanceof StyleReturnStatement styleReturnStatement) {
             Result<List<ASTNode>, EvaluationError> result = evaluateBody(styleReturnStatement.style, isInFunction);
             if (result.isError()) {
-                return new Result.Error<>(result.error());
+                return Result.err(result.error());
             }
 
             Stylerule stylerule = new Stylerule(styleReturnStatement.style.selectors, result.value());
-            return new Result.Success<>(Optional.of(new StyleReturnStatement(stylerule)));
+            return Result.of(Optional.of(new StyleReturnStatement(stylerule)));
         } else if (node instanceof FunctionCall functionCall) {
             Optional<Stylerule> style = functionCall.evaluateStyle(this);
             if (style.isPresent()) {
-                return new Result.Success<>(Optional.of(style.get())); // add the new style to the view
+                return Result.of(Optional.of(style.get())); // add the new style to the view
             }
         }
 
-        return new Result.Success<>(Optional.of(node));
+        return Result.of(Optional.of(node));
     }
 }
