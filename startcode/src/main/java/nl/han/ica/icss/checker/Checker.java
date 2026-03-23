@@ -143,84 +143,18 @@ public class Checker {
         functions.addFirst(new HANHashMap<>());
 
         for (ASTNode child : body.getChildren()) {
-            if (child instanceof FunctionDeclaration declaration) {
-                functions.getFirst()
-                        .put(declaration.name, declaration);
-                continue; // skip as body will be checked later
-            }
-
-            if (child instanceof VariableAssignment assignment) {
-                String name = assignment.name.name;
-
-                Result<ExpressionType, SemanticError> type = assignment.expression.getExpressionType(this);
-                if (type.isError()) {
-                    assignment.expression.setError(type.error());
-                    continue;
+            switch (child) {
+                case FunctionDeclaration declaration -> {
+                    checkFunctionDeclaration(declaration);
+                    continue; // skip as body will be checked later
                 }
-
-                Optional<SemanticError> isValidExpression = assignment.expression.validateExpression(this);
-                if (isValidExpression.isPresent()) {
-                    assignment.expression.setError(isValidExpression.get());
-                    continue;
+                case VariableAssignment assignment -> checkVariableAssignment(assignment);
+                case Declaration declaration -> checkDeclaration(declaration);
+                case IfClause ifClause -> checkIfStatement(ifClause);
+                case ForStatement forStatement -> checkForStatement(forStatement);
+                case ImportStatement importStatement -> checkImportStatement(importStatement);
+                case null, default -> {
                 }
-
-                IHANHashMap<String, ExpressionType> scopedVars = variableTypes.getFirst();
-                scopedVars.put(name, type.value());
-
-                continue;
-            }
-
-            if (child instanceof Declaration declaration) {
-                Optional<SemanticError> isValidExpression = declaration.expression.validateExpression(this);
-                if (isValidExpression.isPresent()) {
-                    declaration.setError(isValidExpression.get());
-                    continue;
-                }
-            }
-
-            if (child instanceof IfClause ifClause) {
-                Result<ExpressionType, SemanticError> result = ifClause.conditionalExpression.getExpressionType(this);
-                if (result.isError()) {
-                    ifClause.setError(result.error());
-                } else {
-                    if (result.value() != ExpressionType.BOOL) {
-                        ifClause.setError("The conditional expression of the if statement must be a boolean expression.");
-                    }
-                }
-            }
-
-            if (child instanceof ForStatement forStatement) {
-                Result<ExpressionType, SemanticError> result = forStatement.loopExpression.getExpressionType(this);
-                if (result.isError()) {
-                    forStatement.setError(result.error());
-                } else {
-                    if (result.value() != ExpressionType.BOOL) {
-                        forStatement.setError("The conditional expression of the for statement must be a boolean expression.");
-                    }
-                }
-            }
-
-            if (child instanceof ImportStatement importStatement) {
-                File file = new File(importStatement.location);
-                if (!file.exists()) {
-                    importStatement.setError("Cannot find the file to import: '" + file.toPath().toAbsolutePath() + "'.");
-                    continue;
-                }
-
-                if (!file.canRead()) {
-                    importStatement.setError("Cannot read file at: '" + file.toPath().toAbsolutePath() + "'.");
-                    continue;
-                }
-
-                Result<HashMap<String, FunctionDeclaration>, SemanticError> importedFunctions = importStatement.validateAndGetImportedFunctions(file, this);
-                if (importedFunctions.isError()) {
-                    importStatement.setError(importedFunctions.error());
-                    continue;
-                }
-
-                functions.getFirst()
-                        .putAll(importedFunctions.value()); // add the imported functions
-                continue;
             }
 
             if (child instanceof BodyStatement innerBody) {
@@ -230,6 +164,82 @@ public class Checker {
 
         popVariablesOffStack(variableTypes, body);
         functions.removeFirst();
+    }
+
+    private void checkFunctionDeclaration(FunctionDeclaration declaration) {
+        FunctionDeclaration oldDeclaration = functions.getFirst()
+                .put(declaration.name, declaration);
+        if (oldDeclaration != null) {
+            declaration.setError(new SemanticError("A function with that name already exists: '" + declaration.name + "'."));
+        }
+    }
+
+    private void checkVariableAssignment(VariableAssignment assignment) {
+        String name = assignment.name.name;
+
+        Result<ExpressionType, SemanticError> type = assignment.expression.getExpressionType(this);
+        if (type.isError()) {
+            assignment.expression.setError(type.error());
+            return;
+        }
+
+        Optional<SemanticError> isValidExpression = assignment.expression.validateExpression(this);
+        if (isValidExpression.isPresent()) {
+            assignment.expression.setError(isValidExpression.get());
+            return;
+        }
+
+        IHANHashMap<String, ExpressionType> scopedVars = variableTypes.getFirst();
+        scopedVars.put(name, type.value());
+    }
+
+    private void checkDeclaration(Declaration declaration) {
+        Optional<SemanticError> isValidExpression = declaration.expression.validateExpression(this);
+        isValidExpression.ifPresent(declaration::setError);
+    }
+
+    private void checkIfStatement(IfClause ifClause) {
+        Result<ExpressionType, SemanticError> result = ifClause.conditionalExpression.getExpressionType(this);
+        if (result.isError()) {
+            ifClause.setError(result.error());
+        } else {
+            if (result.value() != ExpressionType.BOOL) {
+                ifClause.setError("The conditional expression of the if statement must be a boolean expression.");
+            }
+        }
+    }
+
+    private void checkForStatement(ForStatement forStatement) {
+        Result<ExpressionType, SemanticError> result = forStatement.loopExpression.getExpressionType(this);
+        if (result.isError()) {
+            forStatement.setError(result.error());
+        } else {
+            if (result.value() != ExpressionType.BOOL) {
+                forStatement.setError("The conditional expression of the for statement must be a boolean expression.");
+            }
+        }
+    }
+
+    private void checkImportStatement(ImportStatement importStatement) {
+        File file = new File(importStatement.location);
+        if (!file.exists()) {
+            importStatement.setError("Cannot find the file to import: '" + file.toPath().toAbsolutePath() + "'.");
+            return;
+        }
+
+        if (!file.canRead()) {
+            importStatement.setError("Cannot read file at: '" + file.toPath().toAbsolutePath() + "'.");
+            return;
+        }
+
+        Result<HashMap<String, FunctionDeclaration>, SemanticError> importedFunctions = importStatement.validateAndGetImportedFunctions(file, this);
+        if (importedFunctions.isError()) {
+            importStatement.setError(importedFunctions.error());
+            return;
+        }
+
+        functions.getFirst()
+                .putAll(importedFunctions.value()); // add the imported functions
     }
 
     public static <T> Optional<T> getValueFromStack(IHANLinkedList<IHANHashMap<String, T>> stack, String name) {

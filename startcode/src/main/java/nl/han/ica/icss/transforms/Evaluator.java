@@ -13,6 +13,7 @@ import nl.han.ica.icss.ast.literals.BoolLiteral;
 import nl.han.ica.icss.checker.Checker;
 import nl.han.ica.icss.checker.SemanticError;
 import org.checkerframework.checker.nullness.Opt;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.io.IOException;
 import java.util.*;
@@ -142,75 +143,28 @@ public class Evaluator implements Transform {
 
         for (int i = 0; i < body.body.size(); i++) {
             ASTNode child = body.body.get(i);
-            if (child instanceof IfClause ifClause) {
-                Result<Literal, EvaluationError> result = ifClause.conditionalExpression.tryEvaluate(this);
-                if (result.isError()) {
-                    return new Result.Error<>(result.error());
-                }
+            switch (child) {
+                case IfClause ifClause -> {
+                    Result<List<ASTNode>, EvaluationError> result = evaluateIfStatement(isInFunction, ifClause);
+                    if (result.isError()) return result;
 
-                Literal literal = result.value();
-                if (!(literal instanceof BoolLiteral bool)) {
-                    return new Result.Error<>(new InvalidType(literal.getNodeLabel(), "BOOL"));
-                }
-
-
-                if (bool.value) {
-                    Result<List<ASTNode>, EvaluationError> newIfBody = evaluateBody(ifClause, isInFunction);
-                    if (newIfBody.isError()) {
-                        return newIfBody;
-                    }
-
-                    newBody.addAll(newIfBody.value());
-                } else {
-                    Result<List<ASTNode>, EvaluationError> newElseBody = evaluateBody(ifClause.elseClause, isInFunction);
-                    if (newElseBody.isError()) {
-                        return newElseBody;
-                    }
-
-                    newBody.addAll(newElseBody.value());
-                }
-
-                continue;
-            }
-
-            if (child instanceof ForStatement forStatement) {
-                Result<List<ASTNode>, EvaluationError> result = evaluateFor(forStatement, isInFunction);
-                if (result.isError()) {
-                    return result;
-                }
-
-                newBody.addAll(result.value());
-                continue;
-            }
-
-            if (child instanceof FunctionDeclaration functionDeclaration) {
-                functions.getFirst()
-                        .put(functionDeclaration.name, functionDeclaration);
-                if (config.keepFunctions()) {
-                    newBody.add(functionDeclaration);
-                }
-                continue; // Skip for now as the function will be evaluated later at a function call expression.
-            }
-
-            if (child instanceof ImportStatement importStatement) {
-                if (importStatement.isImported) {
+                    newBody.addAll(result.value());
                     continue;
                 }
-                importStatement.isImported = true; // so that a function call doesn't evaluate imports more than once
+                case ForStatement forStatement -> {
+                    Result<List<ASTNode>, EvaluationError> result = evaluateForStatement(isInFunction, forStatement);
+                    if (result.isError()) return result;
 
-                newBody.addAll(importStatement.getImportedStyleRules());
-                for (FunctionDeclaration functionDeclaration : importStatement.getImportedFunctions()) {
-                    functions.getFirst()
-                            .put(functionDeclaration.name, functionDeclaration);
+                    newBody.addAll(result.value());
+                    continue;
                 }
-                HANHashMap<String, Literal> importedVariables = new HANHashMap<>(importStatement.getImportedVariables().size());
-                for (VariableAssignment variableAssignment : importStatement.getImportedVariables()) {
-                    // expression here should already be a literal as it should be evaluated by the import statement
-                    importedVariables.put(variableAssignment.name.name, (Literal)variableAssignment.expression);
+                case FunctionDeclaration functionDeclaration -> {
+                    evaluateFunction(functionDeclaration, newBody);
+                    continue; // Skip for now as the function will be evaluated later at a function call expression.
                 }
-                importedVariableValues.put(importStatement.location, importedVariables);
-
-                continue;
+                case ImportStatement importStatement -> evaluateImport(importStatement, newBody);
+                case null, default -> {
+                }
             }
 
             if (child instanceof BodyStatement innerBody) {
@@ -237,6 +191,72 @@ public class Evaluator implements Transform {
         functions.removeFirst();
 
         return new Result.Success<>(newBody);
+    }
+
+    private Result<List<ASTNode>, EvaluationError> evaluateIfStatement(boolean isInFunction, IfClause ifClause) {
+        Result<Literal, EvaluationError> result = ifClause.conditionalExpression.tryEvaluate(this);
+        if (result.isError()) {
+            return new Result.Error<>(result.error());
+        }
+
+        Literal literal = result.value();
+        if (!(literal instanceof BoolLiteral bool)) {
+            return new Result.Error<>(new InvalidType(literal.getNodeLabel(), "BOOL"));
+        }
+
+
+        if (bool.value) {
+            Result<List<ASTNode>, EvaluationError> newIfBody = evaluateBody(ifClause, isInFunction);
+            if (newIfBody.isError()) {
+                return newIfBody;
+            }
+
+            return new Result.Success<>(newIfBody.value());
+        } else {
+            Result<List<ASTNode>, EvaluationError> newElseBody = evaluateBody(ifClause.elseClause, isInFunction);
+            if (newElseBody.isError()) {
+                return newElseBody;
+            }
+
+            return new Result.Success<>(newElseBody.value());
+        }
+    }
+
+    private Result<List<ASTNode>, EvaluationError> evaluateForStatement(boolean isInFunction, ForStatement forStatement) {
+        Result<List<ASTNode>, EvaluationError> result = evaluateFor(forStatement, isInFunction);
+        if (result.isError()) {
+            return result;
+        }
+
+        return new Result.Success<>(result.value());
+    }
+
+    private void evaluateFunction(FunctionDeclaration functionDeclaration, ArrayList<ASTNode> newBody) {
+        functions.getFirst()
+                .put(functionDeclaration.name, functionDeclaration);
+        if (config.keepFunctions()) {
+            newBody.add(functionDeclaration);
+        }
+    }
+
+    private void evaluateImport(ImportStatement importStatement, ArrayList<ASTNode> newBody) {
+        if (importStatement.isImported) {
+            return;
+        }
+        importStatement.isImported = true; // so that a function call doesn't evaluate imports more than once
+
+
+        newBody.addAll(importStatement.getImportedStyleRules());
+        for (FunctionDeclaration functionDeclaration : importStatement.getImportedFunctions()) {
+            functions.getFirst()
+                    .put(functionDeclaration.name, functionDeclaration);
+        }
+        HANHashMap<String, Literal> importedVariables = new HANHashMap<>(importStatement.getImportedVariables().size());
+        for (VariableAssignment variableAssignment : importStatement.getImportedVariables()) {
+            // expression here should already be a literal as it should be evaluated by the import statement
+            importedVariables.put(variableAssignment.name.name, (Literal) variableAssignment.expression);
+        }
+        importedVariableValues.put(importStatement.location, importedVariables);
     }
 
     private Optional<EvaluationError> evaluateVariableAssignment(VariableAssignment variableAssignment) {
