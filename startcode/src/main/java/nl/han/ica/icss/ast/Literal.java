@@ -3,6 +3,7 @@ package nl.han.ica.icss.ast;
 import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.icss.Result;
 import nl.han.ica.icss.ast.operations.EqualityOperation;
+import nl.han.ica.icss.ast.operations.LogicalOperation;
 import nl.han.ica.icss.ast.types.ExpressionType;
 import nl.han.ica.icss.checker.Checker;
 import nl.han.ica.icss.checker.SemanticError;
@@ -24,6 +25,9 @@ public abstract class Literal extends Expression {
         return Result.err(new InvalidOperation(this, rhs, "mul"));
     }
     public Result<Literal, EvaluationError> compare(Literal rhs, EqualityOperation.EqualityOperationType operation) {
+        return Result.err(new InvalidOperation(this, rhs, operation.name()));
+    }
+    public Result<Literal, EvaluationError> logicalComparison(Literal rhs, LogicalOperation.LogicalOperationType operation) {
         return Result.err(new InvalidOperation(this, rhs, operation.name()));
     }
 

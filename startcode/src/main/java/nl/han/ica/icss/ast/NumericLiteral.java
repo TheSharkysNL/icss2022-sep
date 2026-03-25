@@ -4,6 +4,7 @@ import nl.han.ica.icss.Result;
 import nl.han.ica.icss.ast.literals.BoolLiteral;
 import nl.han.ica.icss.ast.literals.ColorLiteral;
 import nl.han.ica.icss.ast.operations.EqualityOperation;
+import nl.han.ica.icss.ast.operations.LogicalOperation;
 import nl.han.ica.icss.transforms.EvaluationError;
 
 import java.util.Optional;
@@ -50,6 +51,19 @@ public abstract class NumericLiteral extends Literal {
     public Result<Literal, EvaluationError> compare(Literal rhs, EqualityOperation.EqualityOperationType operation) {
         if (!(rhs instanceof NumericLiteral rhsNumericLit)) {
             return super.compare(rhs, operation);
+        }
+
+        int rhsNumeric = rhsNumericLit.getNumericValue();
+        int selfNumeric = getNumericValue();
+        Literal afterOperation = new BoolLiteral(operation.evaluate(selfNumeric, rhsNumeric));
+
+        return Result.of(afterOperation);
+    }
+
+    @Override
+    public Result<Literal, EvaluationError> logicalComparison(Literal rhs, LogicalOperation.LogicalOperationType operation) {
+        if (!(rhs instanceof NumericLiteral rhsNumericLit)) {
+            return super.logicalComparison(rhs, operation);
         }
 
         int rhsNumeric = rhsNumericLit.getNumericValue();

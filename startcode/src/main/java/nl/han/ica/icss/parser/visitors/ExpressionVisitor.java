@@ -1,10 +1,7 @@
 package nl.han.ica.icss.parser.visitors;
 
 import nl.han.ica.icss.ast.Expression;
-import nl.han.ica.icss.ast.operations.AddOperation;
-import nl.han.ica.icss.ast.operations.EqualityOperation;
-import nl.han.ica.icss.ast.operations.MultiplyOperation;
-import nl.han.ica.icss.ast.operations.SubtractOperation;
+import nl.han.ica.icss.ast.operations.*;
 import nl.han.ica.icss.parser.ICSSParser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
@@ -57,8 +54,13 @@ public class ExpressionVisitor extends PrefixExpressionVisitor {
     }
 
     @Override
+    public Expression visitLogicalExpression(ICSSParser.LogicalExpressionContext ctx) {
+        return createBinaryExpression(ctx, LogicalOperation::new);
+    }
+
+    @Override
     public Expression visitExpression(ICSSParser.ExpressionContext ctx) {
-        return ctx.comparisonExpression()
+        return ctx.logicalExpression()
                 .accept(this);
     }
 

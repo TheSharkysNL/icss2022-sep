@@ -38,6 +38,9 @@ PERCENTAGE_TYPE: 'percentage';
 COLOR_TYPE: 'color';
 UNDEFINED_TYPE: 'undefined';
 
+// or
+OR: 'or';
+
 //Literals
 TRUE: 'TRUE';
 FALSE: 'FALSE';
@@ -170,7 +173,13 @@ comparisonExpression
     | comparisonExpression LT additiveExpression
     | comparisonExpression LE additiveExpression;
 
-expression: comparisonExpression;
+logicalExpression
+    : comparisonExpression
+    | logicalExpression AND comparisonExpression
+    | logicalExpression OR comparisonExpression
+    ;
+
+expression: logicalExpression;
 variableAssignment: CAPITAL_IDENT ASSIGNMENT_OPERATOR expression;
 
 statement: style | variableAssignment SEMICOLON | ifStatement | declaration | return | functionDeclaration | expression SEMICOLON | for | iImport | switch;

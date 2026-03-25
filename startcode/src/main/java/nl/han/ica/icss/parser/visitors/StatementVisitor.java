@@ -95,7 +95,7 @@ public class StatementVisitor extends ICSSBaseVisitor<ASTNode> {
 
     @Override
     public ASTNode visitExpression(ICSSParser.ExpressionContext ctx) {
-        return ctx.comparisonExpression().accept(new ExpressionVisitor());
+        return ctx.logicalExpression().accept(new ExpressionVisitor());
     }
 
     @Override
