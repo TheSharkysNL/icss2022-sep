@@ -57,6 +57,11 @@ public class PercentageLiteral extends NumericLiteral {
 
     @Override
     public ExpressionType getExpressionType() {
-        return ExpressionType.PERCENTAGE;
+        return ExpressionType.percentage();
+    }
+
+    @Override
+    public String getStringDisplay() {
+        return super.getStringDisplay() + "%";
     }
 }

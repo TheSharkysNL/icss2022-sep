@@ -65,4 +65,14 @@ public abstract class NumericLiteral extends Literal {
 
         return Result.of(fromNumericValue(~selfNumeric));
     }
+
+    @Override
+    public String getStringDisplay() {
+        return Integer.toString(getNumericValue());
+    }
+
+    @Override
+    public boolean isTruthy() {
+        return getNumericValue() > 0;
+    }
 }

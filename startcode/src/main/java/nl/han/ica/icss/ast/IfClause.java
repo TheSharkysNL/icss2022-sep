@@ -4,9 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class IfClause extends BodyStatement {
-
-
+public class IfClause extends BodyStatement implements IMultipleBodyStatements {
     public Expression conditionalExpression;
     public ElseClause elseClause;
 
@@ -75,4 +73,9 @@ public class IfClause extends BodyStatement {
         return conditionalExpression;
     }
     public ElseClause getElseClause() { return elseClause; }
+
+    @Override
+    public List<BodyStatement> getBodyStatements() {
+        return List.of(this, elseClause);
+    }
 }

@@ -41,15 +41,4 @@ public class ExpressionLiteralVisitor extends ICSSBaseVisitor<Expression> {
         int integerValue = Integer.parseInt(ctx.SCALAR().getText());
         return new ScalarLiteral(integerValue);
     }
-
-    @Override
-    public final Expression visitTupleLiteral(ICSSParser.TupleLiteralContext ctx) {
-        List<Literal> literals = StatementVisitor.getList(
-                ctx.expressionLitList(),
-                ICSSParser.ExpressionLitListContext::expressionLitList,
-                e -> (Literal)e.expressionLit().accept(this)
-        );
-
-        return new TupleLiteral(literals);
-    }
 }

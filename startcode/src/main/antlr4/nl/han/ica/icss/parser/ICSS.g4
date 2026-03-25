@@ -27,6 +27,16 @@ AND: 'and';
 // switch support
 CASE: 'case';
 ARROW: '->';
+RANGE: '..';
+DEFAULT: 'default';
+
+// types
+BOOL_TYPE: 'bool';
+SCALAR_TYPE: 'scalar';
+PIXEL_TYPE: 'pixel';
+PERCENTAGE_TYPE: 'percentage';
+COLOR_TYPE: 'color';
+UNDEFINED_TYPE: 'undefined';
 
 //Literals
 TRUE: 'TRUE';
@@ -99,9 +109,28 @@ importType: FUNCTIONS importItems? #functionsImportType | STYLES #stylesImportTy
 importTypeList: importType | importTypeList AND importType;
 iImport: FROM STRING IMPORT importTypeList SEMICOLON;
 
+// types
+//type
+//    : SCALAR_TYPE #scalarType
+//    | BOOL_TYPE #boolType
+//    | PIXEL_TYPE #pixelType
+//    | COLOR_TYPE #colorType
+//    | PERCENTAGE_TYPE #percentageType
+//    | UNDEFINED_TYPE #undefinedType
+//    ;
+
 // switch
+switchCaseRule
+    : expressionLit #switchLiteralRule
+    | min=expressionLit? RANGE max=expressionLit? #switchRangeRule
+    | DEFAULT #switchDefaultRule
+    | CAPITAL_IDENT #switchVariableRule
+    | BOX_BRACKET_OPEN switchCaseRuleList BOX_BRACKET_CLOSE #switchTupleRule
+//    | type CAPITAL_IDENT? #switchTypeRule
+    ;
+switchCaseRuleList: switchCaseRule | switchCaseRuleList COMMA switchCaseRule;
 switchCaseExpression: statement #singleStatementSwitchCase | OPEN_BRACE statement* CLOSE_BRACE #statementSwitchCase;
-switchCase: expressionLit ARROW switchCaseExpression;
+switchCase: switchCaseRule ARROW switchCaseExpression;
 switchCaseList: switchCase | switchCaseList COMMA switchCase;
 switch: CASE BOX_BRACKET_OPEN expression BOX_BRACKET_CLOSE OPEN_BRACE switchCaseList CLOSE_BRACE;
 
@@ -112,9 +141,7 @@ expressionLit
     | SCALAR          #scalarLiteral
     | TRUE            #trueLiteral
     | FALSE           #falseLiteral
-    | BOX_BRACKET_OPEN expressionLitList BOX_BRACKET_CLOSE #tupleLiteral
     ;
-expressionLitList: expressionLit | expressionLitList COMMA expressionLit;
 primaryExpression: CAPITAL_IDENT #variableIdent | expressionLit #expressionLiteral | (OPEN_BRACE expression CLOSE_BRACE) #braceExpression | BOX_BRACKET_OPEN expressionList BOX_BRACKET_CLOSE #tupleExpression;
 
 // function call

@@ -31,8 +31,8 @@ public class MultiplyOperation extends BinaryOperation {
     @Override
     protected Optional<SemanticError> validateBinaryExpressionInternal(ExpressionType lhs, ExpressionType rhs) {
         return switch (new Tuple<>(lhs, rhs)) {
-            case Tuple(ExpressionType l, ExpressionType ignored) when l == ExpressionType.SCALAR -> Optional.empty();
-            case Tuple(ExpressionType ignored, ExpressionType r) when r == ExpressionType.SCALAR -> Optional.empty();
+            case Tuple(ExpressionType l, ExpressionType ignored) when l == ExpressionType.scalar() -> Optional.empty();
+            case Tuple(ExpressionType ignored, ExpressionType r) when r == ExpressionType.scalar() -> Optional.empty();
             default -> Optional.of(new SemanticError("Cannot multiply expression of type: '" + lhs + "' with type: '" + rhs + "'"));
         };
     }

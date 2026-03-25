@@ -51,6 +51,6 @@ public class ScalarLiteral extends NumericLiteral {
 
     @Override
     public ExpressionType getExpressionType() {
-        return ExpressionType.SCALAR;
+        return ExpressionType.scalar();
     }
 }

@@ -19,8 +19,12 @@ public abstract class BinaryOperation extends Operation {
 
     @Override
     protected Optional<SemanticError> validateExpressionInternal(ExpressionType lhs, ExpressionType rhs) {
-        if (lhs == ExpressionType.COLOR || rhs == ExpressionType.COLOR) { // can never do a binary expression on colors
+        if (lhs == ExpressionType.color() || rhs == ExpressionType.color()) { // can never do a binary expression on colors
             return Optional.of(new SemanticError("Cannot apply a '" + getNodeLabel() + "' operation with a color."));
+        }
+
+        if (lhs instanceof ExpressionType.Tuple || rhs instanceof ExpressionType.Tuple) { // can never do a binary expression on colors
+            return Optional.of(new SemanticError("Cannot apply a '" + getNodeLabel() + "' operation with a tuple."));
         }
 
         return validateBinaryExpressionInternal(lhs, rhs);

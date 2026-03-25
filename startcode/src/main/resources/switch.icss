@@ -14,7 +14,9 @@ p {
 	    [TRUE, FALSE] -> {
 	        color: #124532;
 	        background-color: #000000;
-	    }
+	    },
+        [FALSE, FALSE] -> {},
+        [FALSE, TRUE] -> {}
 	}
 	height: 20px;
 }

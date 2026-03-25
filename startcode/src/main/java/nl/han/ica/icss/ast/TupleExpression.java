@@ -49,7 +49,15 @@ public class TupleExpression extends Expression {
 
     @Override
     public Result<ExpressionType, SemanticError> getExpressionType(Checker checker) {
-        return Result.of(ExpressionType.TUPLE);
+        ArrayList<ExpressionType> innerExpressionTypes = new ArrayList<>(expressions.size());
+        for (Expression expression : expressions) {
+            Result<ExpressionType, SemanticError> result = expression.getExpressionType(checker);
+            if (result.isError()) {
+                return result;
+            }
+            innerExpressionTypes.add(result.value());
+        }
+        return Result.of(ExpressionType.tuple(innerExpressionTypes));
     }
 
     @Override

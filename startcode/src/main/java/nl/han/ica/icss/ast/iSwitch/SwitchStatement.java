@@ -1,26 +1,44 @@
 package nl.han.ica.icss.ast.iSwitch;
 
-import nl.han.ica.icss.ast.ASTNode;
-import nl.han.ica.icss.ast.Expression;
-import nl.han.ica.icss.ast.Literal;
+import nl.han.ica.icss.Result;
+import nl.han.ica.icss.Tuple;
+import nl.han.ica.icss.ast.*;
+import nl.han.ica.icss.ast.iSwitch.rules.SwitchRule;
+import nl.han.ica.icss.ast.types.ExpressionType;
+import nl.han.ica.icss.checker.Checker;
+import nl.han.ica.icss.checker.SemanticError;
 
 import java.util.*;
 
-public class SwitchStatement extends ASTNode {
+public class SwitchStatement extends ASTNode implements IMultipleBodyStatements {
     public final Expression caseExpression;
-    public final HashMap<Literal, SwitchCase> cases;
+    public final SwitchRuleList ruleList;
 
-    public SwitchStatement(Expression caseExpression, HashMap<Literal, SwitchCase> cases) {
+    public SwitchStatement(Expression caseExpression, SwitchRuleList ruleList) {
         this.caseExpression = caseExpression;
-        this.cases = cases;
+        this.ruleList = ruleList;
     }
 
-    public Optional<SwitchCase> getCase(Literal value) {
-        SwitchCase switchCase = cases.get(value);
-        if (switchCase == null) {
-            return Optional.empty();
+    public Optional<Tuple<SwitchRule, SwitchCase>> getCase(Literal value) {
+        return ruleList.getCase(value);
+    }
+
+    public Optional<SemanticError> validateSwitchRules(Checker checker) {
+        Optional<SemanticError> error = caseExpression.validateExpression(checker);
+        if (error.isPresent()) {
+            return error;
         }
-        return Optional.of(cases.get(value));
+
+        return checkSwitchExhaustiveness(checker);
+    }
+
+    private Optional<SemanticError> checkSwitchExhaustiveness(Checker checker) {
+        Result<ExpressionType, SemanticError> type = caseExpression.getExpressionType(checker);
+        if (type.isError()) {
+            return Optional.of(type.error());
+        }
+
+        return ruleList.checkRuleExhaustiveness(type.value());
     }
 
     @Override
@@ -33,11 +51,7 @@ public class SwitchStatement extends ASTNode {
         List<ASTNode> nodes = new ArrayList<>();
 
         nodes.add(caseExpression);
-
-        for (Map.Entry<Literal, SwitchCase> entry : cases.entrySet()) {
-            nodes.add(entry.getKey());
-            nodes.add(entry.getValue());
-        }
+        nodes.add(ruleList);
 
         return nodes;
     }
@@ -49,11 +63,19 @@ public class SwitchStatement extends ASTNode {
         if (!super.equals(o)) return false;
         SwitchStatement that = (SwitchStatement) o;
         return Objects.equals(caseExpression, that.caseExpression) &&
-                Objects.equals(cases, that.cases);
+                Objects.equals(ruleList, that.ruleList);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(caseExpression, cases);
+        return Objects.hash(caseExpression, ruleList);
+    }
+
+    @Override
+    public List<BodyStatement> getBodyStatements() {
+        return ruleList.cases
+                .stream()
+                .map(c -> (BodyStatement)c.second())
+                .toList();
     }
 }

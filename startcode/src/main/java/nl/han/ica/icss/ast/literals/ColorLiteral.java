@@ -59,6 +59,11 @@ public class ColorLiteral extends NumericLiteral {
 
     @Override
     public ExpressionType getExpressionType() {
-        return ExpressionType.COLOR;
+        return ExpressionType.color();
+    }
+
+    @Override
+    public String getStringDisplay() {
+        return value;
     }
 }

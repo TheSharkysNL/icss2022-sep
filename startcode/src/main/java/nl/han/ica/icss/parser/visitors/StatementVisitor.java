@@ -6,7 +6,9 @@ import nl.han.ica.icss.ast.function.FunctionDeclaration;
 import nl.han.ica.icss.ast.iImport.ImportItem;
 import nl.han.ica.icss.ast.iImport.ImportStatement;
 import nl.han.ica.icss.ast.iSwitch.SwitchCase;
+import nl.han.ica.icss.ast.iSwitch.SwitchRuleList;
 import nl.han.ica.icss.ast.iSwitch.SwitchStatement;
+import nl.han.ica.icss.ast.iSwitch.rules.SwitchRule;
 import nl.han.ica.icss.parser.ICSSBaseVisitor;
 import nl.han.ica.icss.parser.ICSSParser;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -135,27 +137,23 @@ public class StatementVisitor extends ICSSBaseVisitor<ASTNode> {
         Expression expression = ctx.expression()
                 .accept(new ExpressionVisitor());
 
-        List<Tuple<Literal, SwitchCase>> casesList = getList(
+        List<Tuple<SwitchRule, SwitchCase>> casesList = getList(
                 ctx.switchCaseList(),
                 ICSSParser.SwitchCaseListContext::switchCaseList,
                 s -> {
-                    Literal literal = (Literal) s.switchCase().expressionLit()
-                            .accept(new ExpressionLiteralVisitor());
+                    SwitchRule rule = s.switchCase().switchCaseRule()
+                            .accept(new SwitchRuleVisitor());
 
                     SwitchCase switchCase = s.switchCase().switchCaseExpression()
                             .accept(new SwitchCaseVisitor());
 
-                    return new Tuple<>(literal, switchCase);
+                    return new Tuple<>(rule, switchCase);
                 }
         );
 
-        HashMap<Literal, SwitchCase> cases = new HashMap<>();
-        for (Tuple<Literal, SwitchCase> switchCase : casesList) {
-            // TODO: do we need to check if a literal is specified multiple times?
-            cases.put(switchCase.first(), switchCase.second());
-        }
+        SwitchRuleList ruleList = new SwitchRuleList(casesList.reversed());
 
-        return new SwitchStatement(expression, cases);
+        return new SwitchStatement(expression, ruleList);
     }
 
     public static <TIn, TOut> List<TOut> getList(TIn in, Function<TIn, TIn> next, Function<TIn, TOut> output) {

@@ -67,8 +67,9 @@ public class EqualityOperation extends Operation {
 
         if (type != EqualityOperationType.EQ && type != EqualityOperationType.NE) {
             return switch (lhs) {
-                case ExpressionType.COLOR, ExpressionType.BOOL
-                        -> Optional.of(new SemanticError("Cannot compare expression of type: '" + lhs + "' with type: '" + rhs + "' using the '" + operatorToken.getText() + "' operator"));
+                case ExpressionType.Bool ignored -> Optional.of(new SemanticError("Cannot compare expression of type: '" + lhs + "' with type: '" + rhs + "' using the '" + operatorToken.getText() + "' operator"));
+                case ExpressionType.Color ignored2 -> Optional.of(new SemanticError("Cannot compare expression of type: '" + lhs + "' with type: '" + rhs + "' using the '" + operatorToken.getText() + "' operator"));
+                case ExpressionType.Tuple ignored3 -> Optional.of(new SemanticError("Cannot compare expression of type: '" + lhs + "' with type: '" + rhs + "' using the '" + operatorToken.getText() + "' operator"));
                 default -> Optional.empty();
             };
         }
@@ -78,7 +79,7 @@ public class EqualityOperation extends Operation {
 
     @Override
     public Result<ExpressionType, SemanticError> getExpressionType(Checker checker) {
-        return Result.of(ExpressionType.BOOL); // comparison always returns a boolean
+        return Result.of(ExpressionType.bool()); // comparison always returns a boolean
     }
 
     @Override

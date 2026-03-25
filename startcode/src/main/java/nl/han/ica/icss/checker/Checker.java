@@ -5,13 +5,16 @@ import nl.han.ica.datastructures.HANLinkedList;
 import nl.han.ica.datastructures.IHANHashMap;
 import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.icss.Result;
+import nl.han.ica.icss.Tuple;
 import nl.han.ica.icss.ast.*;
 import nl.han.ica.icss.ast.function.ExpressionReturnStatement;
 import nl.han.ica.icss.ast.function.FunctionDeclaration;
 import nl.han.ica.icss.ast.function.ImportedFunctionDeclaration;
 import nl.han.ica.icss.ast.function.StyleReturnStatement;
 import nl.han.ica.icss.ast.iImport.ImportStatement;
+import nl.han.ica.icss.ast.iSwitch.SwitchCase;
 import nl.han.ica.icss.ast.iSwitch.SwitchStatement;
+import nl.han.ica.icss.ast.iSwitch.rules.SwitchRule;
 import nl.han.ica.icss.ast.types.ExpressionType;
 
 import java.io.File;
@@ -88,11 +91,20 @@ public class Checker {
             }
 
             if (node instanceof StyleReturnStatement) {
-                return Result.of(Optional.of(ExpressionType.UNDEFINED));
+                return Result.of(Optional.of(ExpressionType.undefined()));
+            }
+
+            List<BodyStatement> statements = List.of();
+            if (node instanceof IMultipleBodyStatements multipleBodyStatements) {
+                statements = multipleBodyStatements.getBodyStatements();
             }
 
             if (node instanceof BodyStatement innerBody) {
-                Result<Optional<ExpressionType>, SemanticError> result = tryGetReturnValue(innerBody);
+                statements = List.of(innerBody);
+            }
+
+            for (BodyStatement body : statements) {
+                Result<Optional<ExpressionType>, SemanticError> result = tryGetReturnValue(body);
                 if (result.isError()) {
                     return result;
                 }
@@ -109,7 +121,7 @@ public class Checker {
             }
         }
 
-        return Result.of(Optional.empty());
+        return Result.of(expressionType);
     }
 
     public Result<ExpressionType, SemanticError> getFunctionCallExpressionType(FunctionDeclaration functionDeclaration, List<Expression> arguments) {
@@ -134,6 +146,16 @@ public class Checker {
         for (ASTNode node : bodyStatement.body) {
             if (node instanceof ExpressionReturnStatement returnStatement) {
                 return returnStatement.expression.validateExpression(this); // When return statement is given then don't check other statements in body
+            }
+
+            if (node instanceof IMultipleBodyStatements multipleBodyStatements) {
+                List<BodyStatement> statements = multipleBodyStatements.getBodyStatements();
+                for (BodyStatement statement : statements) {
+                    Optional<SemanticError> error = validateReturnExpression(statement);
+                    if (error.isPresent()) {
+                        return error;
+                    }
+                }
             }
 
             if (node instanceof BodyStatement innerBody) {
@@ -167,6 +189,7 @@ public class Checker {
                 case IfClause ifClause -> checkIfStatement(ifClause);
                 case ForStatement forStatement -> checkForStatement(forStatement);
                 case ImportStatement importStatement -> checkImportStatement(importStatement);
+                case SwitchStatement switchStatement -> checkSwitchStatement(switchStatement);
                 case null, default -> {
                 }
             }
@@ -178,6 +201,25 @@ public class Checker {
 
         popVariablesOffStack(variableTypes, body);
         functions.removeFirst();
+    }
+
+    private void checkSwitchStatement(SwitchStatement switchStatement) {
+        Optional<SemanticError> error = switchStatement.validateSwitchRules(this);
+        error.ifPresent(switchStatement::setError);
+
+        ExpressionType type = switchStatement.caseExpression.getExpressionType(this).value();
+        for (Tuple<SwitchRule, SwitchCase> switchCase : switchStatement.ruleList) {
+            List<Tuple<VariableReference, ExpressionType>> variables = switchCase.first().getVariableReferences(type);
+
+            HANHashMap<String, ExpressionType> switchVariables = new HANHashMap<>(variables.size());
+            for (Tuple<VariableReference, ExpressionType> variable : variables) {
+                switchVariables.put(variable.first().name, variable.second());
+            }
+
+            variableTypes.addFirst(switchVariables);
+            checkBodyStatements(switchCase.second());
+            variableTypes.removeFirst();
+        }
     }
 
     private void checkFunctionDeclaration(FunctionDeclaration declaration) {
@@ -217,7 +259,7 @@ public class Checker {
         if (result.isError()) {
             ifClause.setError(result.error());
         } else {
-            if (result.value() != ExpressionType.BOOL) {
+            if (result.value() != ExpressionType.bool()) {
                 ifClause.setError("The conditional expression of the if statement must be a boolean expression.");
             }
         }
@@ -228,7 +270,7 @@ public class Checker {
         if (result.isError()) {
             forStatement.setError(result.error());
         } else {
-            if (result.value() != ExpressionType.BOOL) {
+            if (result.value() != ExpressionType.bool()) {
                 forStatement.setError("The conditional expression of the for statement must be a boolean expression.");
             }
         }

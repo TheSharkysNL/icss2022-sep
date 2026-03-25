@@ -1,0 +1,16 @@
+VARIABLE := 10;
+
+case [VARIABLE] {
+    0..100 -> a {
+        color: #ff0000;
+    },
+    100..500 -> div {
+        color: #ff0000;
+    },
+    500..1000 -> span {
+        color: #ff0000;
+    },
+    V -> span {
+        font-size: V;
+    }
+}

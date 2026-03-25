@@ -91,8 +91,8 @@ public abstract class Operation extends Expression {
     @Override
     public Result<ExpressionType, SemanticError> getExpressionType(Checker checker) {
         return withExpressionType(checker, (lhs, rhs) -> Result.of(switch (new Tuple<>(lhs, rhs)) {
-            case Tuple(ExpressionType first, ExpressionType second) when first == ExpressionType.SCALAR -> second;
-            case Tuple(ExpressionType first, ExpressionType second) when second == ExpressionType.SCALAR -> first;
+            case Tuple(ExpressionType first, ExpressionType second) when first == ExpressionType.SCALAR_CONST -> second;
+            case Tuple(ExpressionType first, ExpressionType second) when second == ExpressionType.SCALAR_CONST -> first;
             case Tuple(ExpressionType first, ExpressionType ignored) -> first;
         }));
     }

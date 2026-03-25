@@ -57,6 +57,11 @@ public class PixelLiteral extends NumericLiteral {
 
     @Override
     public ExpressionType getExpressionType() {
-        return ExpressionType.PIXEL;
+        return ExpressionType.pixel();
+    }
+
+    @Override
+    public String getStringDisplay() {
+        return super.getStringDisplay() + "px";
     }
 }

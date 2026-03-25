@@ -42,7 +42,7 @@ public class NegateOperation extends Expression {
             return expressionType.ok();
         }
 
-        if (expressionType.value() != ExpressionType.BOOL) {
+        if (expressionType.value() != ExpressionType.bool()) {
             return Optional.of(new SemanticError("Cannot negate a expression of the type: '" + expressionType.value() + "' must be a boolean expression."));
         }
 
@@ -51,7 +51,7 @@ public class NegateOperation extends Expression {
 
     @Override
     public Result<ExpressionType, SemanticError> getExpressionType(Checker checker) {
-        return Result.of(ExpressionType.BOOL); // negate always returns a boolean
+        return Result.of(ExpressionType.bool()); // negate always returns a boolean
     }
 
     @Override

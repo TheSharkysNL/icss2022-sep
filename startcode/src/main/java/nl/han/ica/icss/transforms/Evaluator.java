@@ -6,11 +6,13 @@ import nl.han.ica.datastructures.IHANHashMap;
 import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.icss.Result;
 import nl.han.ica.icss.TransformationConfig;
+import nl.han.ica.icss.Tuple;
 import nl.han.ica.icss.ast.*;
 import nl.han.ica.icss.ast.function.*;
 import nl.han.ica.icss.ast.iImport.ImportStatement;
 import nl.han.ica.icss.ast.iSwitch.SwitchCase;
 import nl.han.ica.icss.ast.iSwitch.SwitchStatement;
+import nl.han.ica.icss.ast.iSwitch.rules.SwitchRule;
 import nl.han.ica.icss.ast.literals.BoolLiteral;
 import nl.han.ica.icss.checker.Checker;
 import nl.han.ica.icss.checker.SemanticError;
@@ -208,12 +210,26 @@ public class Evaluator implements Transform {
             return Result.err(switchResult.error());
         }
 
-        Optional<SwitchCase> switchCase = switchStatement.getCase(switchResult.value());
+        Optional<Tuple<SwitchRule, SwitchCase>> switchCase = switchStatement.getCase(switchResult.value());
         if (switchCase.isEmpty()) {
             return Result.of(new ArrayList<>());
         }
 
-        return evaluateBody(switchCase.get(), isInFunction);
+        List<VariableAssignment> variables = switchCase.get().first().getVariableAssignments(switchResult.value());
+        HANHashMap<String, Literal> switchVariables = new HANHashMap<>(variables.size());
+        variableValues.addFirst(switchVariables);
+
+        for (VariableAssignment variable : variables) {
+            Optional<EvaluationError> error = evaluateVariableAssignment(variable);
+            if (error.isPresent()) {
+                return Result.err(error.get());
+            }
+        }
+
+        Result<List<ASTNode>, EvaluationError> result = evaluateBody(switchCase.get().second(), isInFunction);
+        variableValues.removeFirst();
+
+        return result;
     }
 
     private Result<List<ASTNode>, EvaluationError> evaluateIfStatement(boolean isInFunction, IfClause ifClause) {

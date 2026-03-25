@@ -31,7 +31,15 @@ public abstract class Literal extends Expression {
         return Result.err(new InvalidOperation(this, null, "negate"));
     }
 
-    protected abstract ExpressionType getExpressionType();
+    public boolean isTruthy() {
+        return false;
+    }
+
+    public String getExhaustiveRange(Literal max) {
+        return getStringDisplay() + ".." + max.getStringDisplay();
+    }
+
+    public abstract ExpressionType getExpressionType();
 
     @Override
     public Result<Literal, EvaluationError> tryEvaluate(Evaluator evaluator) {
@@ -47,4 +55,6 @@ public abstract class Literal extends Expression {
     public Optional<SemanticError> validateExpression(Checker checker) {
         return Optional.empty();
     }
+
+    public abstract String getStringDisplay();
 }

@@ -27,11 +27,6 @@ public class SwitchCase extends BodyStatement {
     }
 
     @Override
-    public List<ASTNode> getChildren() {
-        return new ArrayList<>(body);
-    }
-
-    @Override
     public int hashCode() {
         return Objects.hash(body);
     }
