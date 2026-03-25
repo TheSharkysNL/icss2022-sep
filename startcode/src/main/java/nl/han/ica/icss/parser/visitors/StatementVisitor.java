@@ -63,7 +63,11 @@ public class StatementVisitor extends ICSSBaseVisitor<ASTNode> {
         Expression expression = rule.expression()
                 .accept(new ExpressionVisitor());
 
-        String property = rule.LOWER_IDENT().getText();
+        String property = "color";
+        if (rule.LOWER_IDENT() != null) {
+            property = rule.LOWER_IDENT().getText();
+        }
+
 
         return new Declaration(property, expression);
     }

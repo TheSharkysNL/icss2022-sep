@@ -30,6 +30,14 @@ ARROW: '->';
 RANGE: '..';
 DEFAULT: 'default';
 
+// types
+BOOL_TYPE: 'bool';
+SCALAR_TYPE: 'scalar';
+PIXEL_TYPE: 'pixel';
+PERCENTAGE_TYPE: 'percentage';
+COLOR_TYPE: 'color';
+UNDEFINED_TYPE: 'undefined';
+
 //Literals
 TRUE: 'TRUE';
 FALSE: 'FALSE';
@@ -72,18 +80,10 @@ NEGATE: '!';
 COMMENT: '//' ~( '\r' | '\n' )* -> skip;
 BLOCK_COMMENT: '/*' .*? '*/' -> skip;
 
-// types
-BOOL_TYPE: 'bool';
-SCALAR_TYPE: 'scalar';
-PIXEL_TYPE: 'pixel';
-PERCENTAGE_TYPE: 'percentage';
-COLOR_TYPE: 'color';
-UNDEFINED_TYPE: 'undefined';
-
 //--- PARSER: ---
 selector: LOWER_IDENT #tagSelector | ID_IDENT #idSelector | CLASS_IDENT #classSelector;
 
-declaration: LOWER_IDENT COLON expression SEMICOLON;
+declaration: (LOWER_IDENT | COLOR_TYPE) COLON expression SEMICOLON;
 
 ifStatement: IF BOX_BRACKET_OPEN expression BOX_BRACKET_CLOSE OPEN_BRACE statement* CLOSE_BRACE elseStatement?;
 elseStatement: ELSE OPEN_BRACE statement* CLOSE_BRACE;
@@ -110,14 +110,14 @@ importTypeList: importType | importTypeList AND importType;
 iImport: FROM STRING IMPORT importTypeList SEMICOLON;
 
 // types
-//type
-//    : SCALAR_TYPE #scalarType
-//    | BOOL_TYPE #boolType
-//    | PIXEL_TYPE #pixelType
-//    | COLOR_TYPE #colorType
-//    | PERCENTAGE_TYPE #percentageType
-//    | UNDEFINED_TYPE #undefinedType
-//    ;
+type
+    : SCALAR_TYPE #scalarType
+    | BOOL_TYPE #boolType
+    | PIXEL_TYPE #pixelType
+    | COLOR_TYPE #colorType
+    | PERCENTAGE_TYPE #percentageType
+    | UNDEFINED_TYPE #undefinedType
+    ;
 
 // switch
 switchCaseRule
@@ -126,7 +126,7 @@ switchCaseRule
     | DEFAULT #switchDefaultRule
     | CAPITAL_IDENT #switchVariableRule
     | BOX_BRACKET_OPEN switchCaseRuleList BOX_BRACKET_CLOSE #switchTupleRule
-//    | type CAPITAL_IDENT? #switchTypeRule
+    | type CAPITAL_IDENT? #switchTypeRule
     ;
 switchCaseRuleList: switchCaseRule | switchCaseRuleList COMMA switchCaseRule;
 switchCaseExpression: statement #singleStatementSwitchCase | OPEN_BRACE statement* CLOSE_BRACE #statementSwitchCase;
@@ -170,7 +170,7 @@ comparisonExpression
     | comparisonExpression LT additiveExpression
     | comparisonExpression LE additiveExpression;
 
-expression: comparisonExpression | switch;
+expression: comparisonExpression;
 variableAssignment: CAPITAL_IDENT ASSIGNMENT_OPERATOR expression;
 
 statement: style | variableAssignment SEMICOLON | ifStatement | declaration | return | functionDeclaration | expression SEMICOLON | for | iImport | switch;

@@ -3,6 +3,7 @@ package nl.han.ica.icss.parser.visitors;
 import nl.han.ica.icss.ast.Literal;
 import nl.han.ica.icss.ast.VariableReference;
 import nl.han.ica.icss.ast.iSwitch.rules.*;
+import nl.han.ica.icss.ast.types.ExpressionType;
 import nl.han.ica.icss.parser.ICSSBaseVisitor;
 import nl.han.ica.icss.parser.ICSSParser;
 
@@ -47,5 +48,17 @@ public class SwitchRuleVisitor extends ICSSBaseVisitor<SwitchRule> {
     public SwitchRule visitSwitchVariableRule(ICSSParser.SwitchVariableRuleContext ctx) {
         VariableReference reference = new VariableReference(ctx.CAPITAL_IDENT().getText());
         return new VariableRule(reference);
+    }
+
+    @Override
+    public SwitchRule visitSwitchTypeRule(ICSSParser.SwitchTypeRuleContext ctx) {
+        VariableReference reference = null;
+        if (ctx.CAPITAL_IDENT() != null) {
+            reference = new VariableReference(ctx.CAPITAL_IDENT().getText());
+        }
+        ExpressionType type = ctx.type()
+                .accept(new ExpressionTypeVisitor());
+
+        return new TypeRule(reference, type);
     }
 }

@@ -10,7 +10,8 @@ case [VARIABLE] {
     500..1000 -> span {
         color: #ff0000;
     },
-    V -> span {
+    pixel V -> span {
         font-size: V;
-    }
+    },
+    default -> {}
 }
