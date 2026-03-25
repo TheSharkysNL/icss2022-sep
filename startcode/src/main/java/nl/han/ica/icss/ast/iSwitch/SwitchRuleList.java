@@ -11,6 +11,7 @@ import nl.han.ica.icss.checker.SemanticError;
 import nl.han.ica.icss.transforms.EvaluationError;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /*
  * TODO: add rules like:
@@ -31,13 +32,15 @@ import java.util.*;
  */
 public class SwitchRuleList extends ASTNode implements Iterable<Tuple<SwitchRule, SwitchCase>> {
     public final List<Tuple<SwitchRule, SwitchCase>> cases;
-    public final List<Tuple<SwitchRule, SwitchCase>> sortedCases;
+    public final List<SwitchRule> sortedCases;
 
     public SwitchRuleList(List<Tuple<SwitchRule, SwitchCase>> cases) {
         this.cases = cases;
-        sortedCases = new ArrayList<>(cases);
-
-        sortedCases.sort((a, b) -> a.first().compare(b.first()));
+        sortedCases = cases
+                .stream()
+                .map(Tuple::first)
+                .sorted(SwitchRule::compare)
+                .toList();
     }
 
     public Optional<Tuple<SwitchRule, SwitchCase>> getCase(Literal value) {
@@ -52,12 +55,12 @@ public class SwitchRuleList extends ASTNode implements Iterable<Tuple<SwitchRule
     }
 
     public Optional<SemanticError> checkRuleExhaustiveness(ExpressionType expressionType) {
-        if (expressionType == ExpressionType.color()) {
+        if (expressionType.mustHaveDefaultCase()) {
             boolean hasDefault = cases
                     .stream()
                     .anyMatch(x -> x.first() instanceof DefaultRule);
             if (!hasDefault) {
-                return Optional.of(new SemanticError("A switch statement when trying to match a color expression must have a default case."));
+                return Optional.of(new SemanticError("A switch statement when trying to match a " + expressionType + " expression must have a default case."));
             }
             return Optional.empty();
         }
@@ -67,8 +70,8 @@ public class SwitchRuleList extends ASTNode implements Iterable<Tuple<SwitchRule
 
         StringBuilder builder = new StringBuilder();
 
-        for (Tuple<SwitchRule, SwitchCase> switchCase : sortedCases) {
-            Result<Tuple<Literal, Optional<String>>, SemanticError> result = switchCase.first().getExhaustiveness(currentMinValue);
+        for (SwitchRule rule : sortedCases) {
+            Result<Tuple<Literal, Optional<String>>, SemanticError> result = rule.getExhaustiveness(currentMinValue);
             if (result.isError()) {
                 return Optional.of(result.error());
             }

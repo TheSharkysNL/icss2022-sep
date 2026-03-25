@@ -55,6 +55,11 @@ public sealed interface ExpressionType {
         public String toString() {
             return "color";
         }
+
+        @Override
+        public boolean mustHaveDefaultCase() {
+            return true;
+        }
     }
     record Scalar()     implements ExpressionType {
         @Override
@@ -129,6 +134,10 @@ public sealed interface ExpressionType {
     }
     default Literal min() {
         return null;
+    }
+
+    default boolean mustHaveDefaultCase() {
+        return false;
     }
 
     Pixel PIXEL_CONST = new Pixel();
