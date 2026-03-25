@@ -30,14 +30,6 @@ ARROW: '->';
 RANGE: '..';
 DEFAULT: 'default';
 
-// types
-BOOL_TYPE: 'bool';
-SCALAR_TYPE: 'scalar';
-PIXEL_TYPE: 'pixel';
-PERCENTAGE_TYPE: 'percentage';
-COLOR_TYPE: 'color';
-UNDEFINED_TYPE: 'undefined';
-
 //Literals
 TRUE: 'TRUE';
 FALSE: 'FALSE';
@@ -79,6 +71,14 @@ NEGATE: '!';
 
 COMMENT: '//' ~( '\r' | '\n' )* -> skip;
 BLOCK_COMMENT: '/*' .*? '*/' -> skip;
+
+// types
+BOOL_TYPE: 'bool';
+SCALAR_TYPE: 'scalar';
+PIXEL_TYPE: 'pixel';
+PERCENTAGE_TYPE: 'percentage';
+COLOR_TYPE: 'color';
+UNDEFINED_TYPE: 'undefined';
 
 //--- PARSER: ---
 selector: LOWER_IDENT #tagSelector | ID_IDENT #idSelector | CLASS_IDENT #classSelector;
