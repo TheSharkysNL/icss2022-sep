@@ -41,7 +41,7 @@ public class BoolLiteral extends NumericLiteral {
         // uses the underlying integer to check whether FALSE and TRUE are matched by the switch case
         // without this integer there would be no way to check if TRUE was found within the switch
         // Because without the integer the max would be TRUE and the min would be FALSE which means it'll only
-        // check for FALSE using the highwater algorithm
+        // check for FALSE using the interval partition covering algorithm
 
         for (int i = underlyingInteger; i < Math.min(boolMax.underlyingInteger, 2); i++) {
             if (!str.isEmpty()) {

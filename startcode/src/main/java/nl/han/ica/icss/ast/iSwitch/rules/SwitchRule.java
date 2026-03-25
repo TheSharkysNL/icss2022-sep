@@ -21,7 +21,7 @@ public abstract class SwitchRule extends ASTNode {
     public abstract Result<Boolean, EvaluationError> matchesRule(Literal value);
 
     /**
-     * Checks for exhaustiveness. Based on high water algorithm
+     * Checks for exhaustiveness. Based on interval partition covering algorithm
      * @param highWater The current value based on tbe previous one given
      * @return Either a success result containing the next literal and a error if applicable or a error result containing a semantic error
      */
